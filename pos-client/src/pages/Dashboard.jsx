@@ -171,11 +171,13 @@ function HourlyChart({ hourlySales, dates }) {
 function QuickBtn({ label, icon, color, onClick }) {
   return (
     <button onClick={onClick}
-      className={`relative flex-1 flex flex-col items-center justify-center py-8 rounded-2xl text-white font-bold text-sm shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] ${color}`}>
-      <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center mb-2">
+      className={`group relative flex flex-col items-center justify-center gap-3 py-5 px-4 rounded-2xl text-white shadow-md hover:shadow-xl hover:-translate-y-1 active:translate-y-0 transition-all duration-200 overflow-hidden ${color}`}>
+      {/* decorative circle */}
+      <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-black/15 group-hover:bg-black/20 transition-colors" />
+      <div className="w-16 h-16 rounded-2xl bg-black/20 group-hover:bg-black/25 flex items-center justify-center transition-colors z-10">
         {icon}
       </div>
-      <span className="text-base font-bold">{label}</span>
+      <span className="font-bold text-base tracking-tight leading-tight z-10">{label}</span>
     </button>
   );
 }
@@ -388,22 +390,22 @@ export default function Dashboard() {
       </svg>
     ),
     pos: (
-      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1-4H9m0 0a2 2 0 000 4h6a2 2 0 000-4M9 3h6"/>
       </svg>
     ),
     product: (
-      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
       </svg>
     ),
     purchase: (
-      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
       </svg>
     ),
     report: (
-      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
       </svg>
     ),

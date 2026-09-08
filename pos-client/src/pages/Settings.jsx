@@ -472,6 +472,35 @@ export default function Settings() {
                   </span>
                 )}
               </button>
+
+              {/* Interface 3 */}
+              <button type="button" onClick={() => set('pos_interface', '3')}
+                className={`flex-1 rounded-xl border-2 p-3 text-left transition-all ${form.pos_interface === '3' ? 'border-green-500 bg-green-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                <div className="w-full h-16 rounded-lg bg-slate-900 mb-2 overflow-hidden flex gap-0.5 p-1">
+                  <div className="flex-1 flex flex-col gap-0.5">
+                    <div className="h-2 bg-slate-700 rounded-sm flex gap-0.5 items-center px-0.5">
+                      {['bg-blue-500','bg-purple-500','bg-green-500','bg-orange-500'].map((c,i) => (
+                        <div key={i} className={`h-1 w-3 rounded-full ${c}`} />
+                      ))}
+                    </div>
+                    <div className="flex-1 grid grid-cols-4 gap-0.5">
+                      {[...Array(8)].map((_,i) => <div key={i} className="bg-slate-700 rounded-sm" />)}
+                    </div>
+                  </div>
+                  <div className="w-7 bg-slate-950 rounded-sm flex flex-col gap-0.5 p-0.5">
+                    {[...Array(3)].map((_,i) => <div key={i} className="h-1.5 bg-slate-700 rounded-sm" />)}
+                    <div className="mt-auto h-2 bg-green-600 rounded-sm" />
+                  </div>
+                </div>
+                <p className="text-sm font-semibold text-slate-800">Interface 3</p>
+                <p className="text-xs text-slate-500 mt-0.5">Dark supermarket POS (Keells-style)</p>
+                {form.pos_interface === '3' && (
+                  <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-green-600">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>
+                    Active
+                  </span>
+                )}
+              </button>
             </div>
           </Card>
 

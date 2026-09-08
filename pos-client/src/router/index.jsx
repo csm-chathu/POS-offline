@@ -13,6 +13,7 @@ import ProductIntake  from '../pages/products/Intake';
 import SalesIndex     from '../pages/sales/Index';
 import SalesCreate    from '../pages/sales/Create';
 import SalesCreate2   from '../pages/sales/Create2';
+import SalesCreate3   from '../pages/sales/Create3';
 import SalesShow      from '../pages/sales/Show';
 import CustomersIndex  from '../pages/customers/Index';
 import CustomerCredit  from '../pages/customers/Credit';
@@ -38,7 +39,7 @@ function ProtectedRoute() {
 
 function POSRoute() {
   const iface = localStorage.getItem('pos_interface') || '1';
-  return iface === '2' ? <SalesCreate2 /> : <SalesCreate />;
+  return iface === '3' ? <SalesCreate3 /> : iface === '2' ? <SalesCreate2 /> : <SalesCreate />;
 }
 
 function RoleLayout() {
