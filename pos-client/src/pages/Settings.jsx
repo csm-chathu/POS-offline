@@ -127,10 +127,11 @@ export default function Settings() {
   useEffect(() => {
     if (data) {
       const merged = {
-        shop_name:         '',
-        address:           '',
-        phone:             '',
-        email:             '',
+        shop_name:           '',
+        address:             '',
+        phone:               '',
+        email:               '',
+        default_login_email: '',
         currency:          'Rs.',
         tax_rate:          '0',
         receipt_note:      '',
@@ -250,6 +251,9 @@ export default function Settings() {
                   <input type="email" value={form.email ?? ''} onChange={e => set('email', e.target.value)} className={inputCls} />
                 </Field>
               </div>
+              <Field label="Default Login Email">
+                <input type="email" value={form.default_login_email ?? ''} onChange={e => set('default_login_email', e.target.value)} placeholder="Pre-filled email on login page" className={inputCls} />
+              </Field>
             </div>
           </Card>
 

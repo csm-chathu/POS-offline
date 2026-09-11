@@ -52,7 +52,7 @@ const DEMO = [
 ];
 
 export default function Login() {
-  const [form, setForm]       = useState({ email: 'admin@lumac.lk', password: '' });
+  const [form, setForm]       = useState({ email: '', password: '' });
   const [error, setError]     = useState('');
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [appInfo, setAppInfo] = useState(() => {
@@ -76,7 +76,11 @@ export default function Login() {
   useEffect(() => {
     fetch(`${API}/api/settings/public`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => d && setAppInfo(d))
+      .then(d => {
+        if (!d) return;
+        setAppInfo(d);
+        if (d.default_login_email) setForm(f => ({ ...f, email: d.default_login_email }));
+      })
       .catch(() => {});
   }, []);
 
