@@ -1279,8 +1279,8 @@ export default function SalesCreate() {
                   <span></span>
                   <span>{t('th.product')}</span>
                   <span className="text-right">{t('th.qty')}</span>
-                  <span className="text-right">Sell Price</span>
-                  <span className="text-right">Our Price</span>
+                  <span className="text-right">{t('th.sell_price')}</span>
+                  <span className="text-right">{t('lbl.our_price')}</span>
                   <span className="text-right">{t('lbl.discount')}</span>
                   <span className="text-right">{t('th.total')}</span>
                   <span></span>
