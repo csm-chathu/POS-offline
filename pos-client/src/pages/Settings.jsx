@@ -131,7 +131,8 @@ export default function Settings() {
         address:             '',
         phone:               '',
         email:               '',
-        default_login_email: '',
+        default_login_email:    '',
+        use_manager_dashboard:  'false',
         currency:          'Rs.',
         tax_rate:          '0',
         receipt_note:      '',
@@ -149,6 +150,7 @@ export default function Settings() {
       };
       setForm(merged);
       if (merged.pos_interface) localStorage.setItem('pos_interface', merged.pos_interface);
+      localStorage.setItem('use_manager_dashboard', merged.use_manager_dashboard || 'false');
     }
   }, [data]);
 
@@ -156,6 +158,7 @@ export default function Settings() {
     setForm(f => ({ ...f, [key]: val }));
     if (key === 'interface_language') setLocale(val);
     if (key === 'pos_interface') localStorage.setItem('pos_interface', val);
+    if (key === 'use_manager_dashboard') localStorage.setItem('use_manager_dashboard', val);
   }
   const bool = key => form[key] === 'true' || form[key] === true;
 
@@ -265,6 +268,13 @@ export default function Settings() {
                 <p className="text-sm text-slate-500 mt-0.5">Show demo credentials on the login page. Disable for live deployment.</p>
               </div>
               <Toggle checked={bool('demo_mode')} onChange={v => set('demo_mode', String(v))} color="bg-orange-500" />
+            </div>
+            <div className="flex items-start justify-between gap-4 mt-4 pt-4 border-t border-slate-100">
+              <div>
+                <p className="font-semibold text-slate-800">Manager Dashboard</p>
+                <p className="text-sm text-slate-500 mt-0.5">Show the manager dashboard instead of the analytics dashboard.</p>
+              </div>
+              <Toggle checked={bool('use_manager_dashboard')} onChange={v => set('use_manager_dashboard', String(v))} color="bg-blue-500" />
             </div>
             {bool('demo_mode') && (
               <div className="mt-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 font-medium">
