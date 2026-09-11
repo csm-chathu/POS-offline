@@ -397,14 +397,23 @@ export default function ProductsIndex() {
                 </div>
               </div>
               <div className="flex items-center justify-between mb-3">
-                <div>
-                  {p.promo_price ? (
+                <div className="flex gap-3 items-center flex-wrap">
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-semibold uppercase">Sell</p>
+                    {p.promo_price ? (
+                      <div className="flex items-center gap-1">
+                        <span className="font-bold text-orange-500 text-sm">{fmtPrice(p.promo_price)}</span>
+                        <span className="text-xs text-slate-400 line-through">{fmtPrice(p.selling_price)}</span>
+                      </div>
+                    ) : (
+                      <span className="font-semibold text-green-600 text-sm">{fmtPrice(p.selling_price)}</span>
+                    )}
+                  </div>
+                  {p.our_price && (
                     <div>
-                      <span className="font-bold text-orange-500 text-sm">{fmtPrice(p.promo_price)}</span>
-                      <span className="text-xs text-slate-400 line-through ml-1">{fmtPrice(p.selling_price)}</span>
+                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Our Price</p>
+                      <span className="font-bold text-blue-600 text-sm">{fmtPrice(p.our_price)}</span>
                     </div>
-                  ) : (
-                    <span className="font-semibold text-green-600 text-sm">{fmtPrice(p.selling_price)}</span>
                   )}
                 </div>
                 <span className={`text-sm font-medium ${isLow ? 'text-red-600' : 'text-slate-700'}`}>

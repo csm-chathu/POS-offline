@@ -260,23 +260,22 @@ export default function AppLayout() {
 
   function handleLogout() {
     dispatch(logout());
+    dispatch(api.util.resetApiState());
     navigate('/login');
   }
 
-  // Nav item class builder
+  const dark = theme === 'dark';
+
   function navCls(isActive) {
     const base = `flex items-center py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap overflow-hidden
       ${displayCollapsed ? 'justify-center px-0 w-10 mx-auto' : 'gap-3 px-3'}`;
-    if (isActive) {
-      return `${base} bg-orange-500 text-white shadow-md shadow-orange-500/30`;
-    }
-    return `${base} text-slate-400 hover:text-white hover:bg-slate-700/60`;
+    if (isActive) return `${base} bg-orange-500 text-white shadow-md shadow-orange-500/30`;
+    return `${base} text-white/80 hover:text-white hover:bg-white/10`;
   }
 
-  // Same layout as navCls but greyed-out + non-interactive, for nav items
-  // that require a live server connection while the app is offline.
   function navClsLocked() {
-    return `flex items-center py-2.5 rounded-xl text-sm font-medium whitespace-nowrap overflow-hidden cursor-not-allowed opacity-40 text-slate-500
+    return `flex items-center py-2.5 rounded-xl text-sm font-medium whitespace-nowrap overflow-hidden cursor-not-allowed opacity-40
+      text-white/40
       ${displayCollapsed ? 'justify-center px-0 w-10 mx-auto' : 'gap-3 px-3'}`;
   }
 
@@ -288,7 +287,7 @@ export default function AppLayout() {
 
   return (
     <DailyConnectionGate>
-    <div style={zoomStyle} className="flex h-screen bg-slate-100 overflow-hidden">
+    <div style={{ ...zoomStyle, ...(theme === 'dark' ? { backgroundColor: '#1c1c1c' } : {}) }} className="flex h-screen bg-slate-100 overflow-hidden">
 
       {/* ── Mobile overlay backdrop ─────────────────────────────────────── */}
       {mobileOpen && (
@@ -299,16 +298,18 @@ export default function AppLayout() {
       )}
 
       {/* ── Sidebar ────────────────────────────────────────────────────────── */}
-      <aside className={`print:hidden bg-slate-900 flex flex-col shrink-0 select-none transition-all duration-300 overflow-hidden
+      <aside className={`print:hidden flex flex-col shrink-0 select-none transition-all duration-300 overflow-hidden
         fixed inset-y-0 left-0 z-[999] w-64
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
         md:static md:translate-x-0 md:z-auto md:inset-y-auto md:left-auto
-        ${collapsed ? 'md:w-[62px]' : 'md:w-56'}`}>
+        ${collapsed ? 'md:w-[62px]' : 'md:w-56'}
+        border-r border-[#2a2a2a]`} style={{ backgroundColor: '#141414' }}>
 
         {/* Brand / Logo */}
-        <div className={`border-b border-slate-700/60 shrink-0 flex items-center transition-all duration-300
+        <div className={`shrink-0 flex items-center transition-all duration-300
+          border-b border-[#2a2a2a]
           ${displayCollapsed ? 'justify-center py-3 px-0' : 'px-4 py-3 gap-2.5'}`}>
-          <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-white font-extrabold text-sm shrink-0 overflow-hidden border-2 border-slate-600">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm shrink-0 overflow-hidden border-2 bg-slate-700 border-[#2a2a2a] text-white">
             {shopInfo.shop_logo
               ? <img src={shopInfo.shop_logo} alt="logo" className="w-full h-full object-cover" />
               : <span>{(shopInfo.shop_name || 'L')[0].toUpperCase()}</span>
@@ -316,10 +317,10 @@ export default function AppLayout() {
           </div>
           {!displayCollapsed && (
             <div className="min-w-0">
-              <p className="text-white font-bold text-sm leading-tight truncate">
+              <p className="font-bold text-sm leading-tight truncate text-white">
                 {shopInfo.shop_name || 'LMUC POS'}
               </p>
-              <p className="text-slate-400 text-xs">Point of Sale</p>
+              <p className="text-xs text-slate-400">Point of Sale</p>
             </div>
           )}
         </div>
@@ -359,8 +360,8 @@ export default function AppLayout() {
             <>
               <div className={`pt-4 pb-1.5 ${displayCollapsed ? 'flex justify-center' : 'px-3'}`}>
                 {displayCollapsed
-                  ? <div className="w-5 border-t border-slate-700" />
-                  : <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{t('nav.management')}</p>
+                  ? <div className={`w-5 border-t border-[#2a2a2a]`} />
+                  : <p className={`text-xs font-semibold uppercase tracking-widest text-slate-500`}>{t('nav.management')}</p>
                 }
               </div>
               {mgmtNav.map(({ to, label, icon, offlineOk }) => {
@@ -393,17 +394,18 @@ export default function AppLayout() {
         </nav>
 
         {/* Bottom: collapse toggle + logout */}
-        <div className={`border-t border-slate-700/60 shrink-0 py-3 space-y-1 ${displayCollapsed ? 'px-1' : 'px-3'}`}>
-          {/* Hide collapse toggle on mobile drawer */}
+        <div className={`shrink-0 py-3 space-y-1
+          border-t border-[#2a2a2a]
+          ${displayCollapsed ? 'px-1' : 'px-3'}`}>
           <button onClick={toggleCollapse}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className={`hidden md:flex items-center gap-2 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700/60 transition-all duration-150
+            className={`hidden md:flex items-center gap-2 py-2 rounded-xl transition-all duration-150 text-slate-400 hover:text-white hover:bg-white/10
               ${displayCollapsed ? 'justify-center w-10 mx-auto px-0' : 'px-3 w-full'}`}>
             {collapsed ? Icons.chevronsRight : Icons.chevronsLeft}
             {!displayCollapsed && <span className="text-sm font-medium">{t('btn.collapse')}</span>}
           </button>
           <button onClick={handleLogout} title={t('btn.logout')}
-            className={`flex items-center gap-2 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-red-600/20 transition-all duration-150
+            className={`flex items-center gap-2 py-2 rounded-xl transition-all duration-150 text-slate-400 hover:text-white hover:bg-red-600/20
               ${displayCollapsed ? 'justify-center w-10 mx-auto px-0' : 'px-3 w-full'}`}>
             {Icons.logout}
             {!displayCollapsed && <span className="text-sm font-medium">{t('btn.logout')}</span>}
@@ -421,19 +423,19 @@ export default function AppLayout() {
 
         {/* Top header */}
         {!hideHeader && (
-          <header className="print:hidden h-14 bg-white border-b border-slate-200 flex items-center justify-between px-3 md:px-6 shrink-0 shadow-sm">
+          <header style={theme === 'dark' ? { backgroundColor: '#141414', borderColor: '#2a2a2a' } : {}} className="print:hidden h-14 bg-white border-b border-slate-200 flex items-center justify-between px-3 md:px-6 shrink-0 shadow-sm">
             <div className="flex items-center gap-2 md:gap-3">
               {/* Hamburger — mobile only */}
               <button
                 onClick={() => setMobileOpen(o => !o)}
-                className="md:hidden p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+                className="md:hidden p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#252525] rounded-xl transition-colors"
                 aria-label="Open menu"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
               </button>
-              <h1 className="text-sm md:text-base font-bold text-slate-800 truncate max-w-[140px] sm:max-w-none">{pageTitle}</h1>
+              <h1 className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100 truncate max-w-[140px] sm:max-w-none">{pageTitle}</h1>
               {!isOnline && (
                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-red-100 border border-red-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -476,7 +478,7 @@ export default function AppLayout() {
                   onClick={runSync}
                   disabled={syncing}
                   title="Sync all data"
-                  className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-40">
+                  className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#252525] rounded-xl transition-colors disabled:opacity-40">
                   <svg className={`w-5 h-5 ${syncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"/>
                   </svg>
@@ -485,7 +487,7 @@ export default function AppLayout() {
               {/* Theme toggle */}
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+                className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#252525] rounded-xl transition-colors"
                 title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
                 {theme === 'dark' ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -499,7 +501,7 @@ export default function AppLayout() {
                 )}
               </button>
               <button onClick={() => setOfflineDrawerOpen(true)} title="Offline invoices"
-                className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors">
+                className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#252525] rounded-xl transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9l2 2 4-4"/>
                 </svg>
@@ -510,7 +512,7 @@ export default function AppLayout() {
                 )}
               </button>
               <button onClick={() => setNotifOpen(o => !o)}
-                className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors">
+                className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#252525] rounded-xl transition-colors">
                 {Icons.bell}
                 {notifCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
@@ -518,18 +520,18 @@ export default function AppLayout() {
                   </span>
                 )}
               </button>
-              <div className="w-px h-6 bg-slate-200 hidden sm:block" />
+              <div className="w-px h-6 bg-slate-200 dark:bg-[#2a2a2a] hidden sm:block" />
               <div className="flex items-center gap-2 pl-1">
                 <div className={`w-8 h-8 rounded-full ${roleColor[role] || 'bg-slate-500'} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
                   {user?.name?.[0]?.toUpperCase() || 'U'}
                 </div>
                 <div className="text-sm leading-tight hidden sm:block">
-                  <p className="font-semibold text-slate-700">{user?.name}</p>
-                  <p className="text-xs text-slate-400 capitalize">{role}</p>
+                  <p className="font-semibold text-slate-700 dark:text-slate-200">{user?.name}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 capitalize">{role}</p>
                 </div>
               </div>
               <button onClick={handleLogout}
-                className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors">
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-500 active:bg-red-700 rounded-xl transition-colors shadow-sm">
                 {Icons.logout}
                 <span className="hidden sm:inline">{t('btn.logout')}</span>
               </button>

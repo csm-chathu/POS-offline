@@ -45,7 +45,7 @@ export default function ProductForm({ initial = {}, onSubmit, isSaving }) {
     defaultValues: {
       name: '', name_si: '', barcode: '', sku: '',
       category_id: '', unit: 'pcs',
-      cost_price: '0.00', selling_price: '0.00', wholesale_price: '0.00',
+      cost_price: '0.00', selling_price: '0.00', wholesale_price: '0.00', our_price: '',
       promo_price: '', promo_start_date: '', promo_end_date: '',
       expiry_date: '', stock_qty: '0', alert_qty: '1',
       description: '',
@@ -377,7 +377,7 @@ export default function ProductForm({ initial = {}, onSubmit, isSaving }) {
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('prod.price_info')}</p>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1.5">
                   {t('prod.buy_price')} <span className="text-red-500">*</span>
@@ -408,6 +408,12 @@ export default function ProductForm({ initial = {}, onSubmit, isSaving }) {
                 <label className="block text-sm font-medium text-slate-600 mb-1.5">{t('prod.wholesale_price')}</label>
                 <input type="number" min="0" step="0.01"
                   {...register('wholesale_price')}
+                  onFocus={e => e.target.select()} placeholder="0.00" className={inp} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">{t('lbl.our_price')}</label>
+                <input type="number" min="0" step="0.01"
+                  {...register('our_price')}
                   onFocus={e => e.target.select()} placeholder="0.00" className={inp} />
               </div>
             </div>
