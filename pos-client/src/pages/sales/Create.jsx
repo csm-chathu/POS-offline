@@ -195,17 +195,25 @@ function CartItemZoomModal({ item, onChange, onRemove, onClose }) {
 
 // ─── Cart Row ─────────────────────────────────────────────────────────────────
 function CartRow({ item, onChange, onRemove, onZoom, onEnter, onArrow, highlight, isSinhala }) {
-  const qtyRef = useRef(null);
+  const qtyRef      = useRef(null);
+  const sellRef     = useRef(null);
+  const unitRef     = useRef(null);
+  const discRef     = useRef(null);
   const [qtyStr, setQtyStr] = useState(String(item.qty));
-  useEffect(() => { if (highlight) qtyRef.current?.focus(); }, [highlight]);
+  useEffect(() => { if (highlight) { qtyRef.current?.focus(); qtyRef.current?.select(); } }, [highlight]);
   useEffect(() => { setQtyStr(String(item.qty)); }, [item.qty]);
 
   const stockQty = parseFloat(item.stock_qty || 0);
   const overStock = stockQty > 0 && item.qty > stockQty;
   const priceOverridden = item.default_price != null && item.unit_price !== item.default_price;
-  const navKey = e => {
-    if (e.key === 'ArrowUp')   { e.preventDefault(); onArrow?.(-1); }
-    if (e.key === 'ArrowDown') { e.preventDefault(); onArrow?.(1); }
+
+  // Left/Right navigate within-row fields; Up/Down navigate rows; Enter → barcode
+  const rowNav = (e, prev, next) => {
+    if (e.key === 'Enter')      { e.preventDefault(); onEnter?.(); return; }
+    if (e.key === 'ArrowUp')    { e.preventDefault(); onArrow?.(-1); }
+    if (e.key === 'ArrowDown')  { e.preventDefault(); onArrow?.(1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); next?.current?.focus(); next?.current?.select(); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); prev?.current?.focus(); prev?.current?.select(); }
   };
 
   return (
@@ -213,30 +221,29 @@ function CartRow({ item, onChange, onRemove, onZoom, onEnter, onArrow, highlight
       style={{ gridTemplateColumns: 'minmax(0,1fr) 60px 88px 88px 72px 92px 24px' }}>
       <button type="button" onClick={onZoom} className="min-w-0 text-left">
         <p className="font-semibold text-slate-800 truncate leading-tight">{isSinhala && item.name_si ? item.name_si : item.name}</p>
-        {item.barcode && <p className="text-xs text-slate-400 font-mono leading-tight">{item.barcode}</p>}
         {overStock && <p className="text-xs text-orange-500 font-semibold leading-tight">⚠ Exceeds stock ({stockQty})</p>}
       </button>
       <input ref={qtyRef} type="number" min="0.001" step="0.001" value={qtyStr}
         onChange={e => { setQtyStr(e.target.value); const v = parseFloat(e.target.value); if (v > 0) onChange({ qty: v }); }}
         onFocus={e => e.target.select()}
-        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onEnter?.(); } navKey(e); }}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onEnter?.(); return; } rowNav(e, null, sellRef); }}
         className={`cart-qty-input text-right rounded-lg border px-1.5 py-1 text-sm outline-none focus:ring-1 focus:ring-blue-500 w-full ${overStock ? 'border-orange-400 bg-orange-50' : 'border-slate-200'}`}
         title={overStock ? `Stock: ${stockQty}` : undefined} />
-      <input type="number" min="0" step="0.01" value={item.selling_price || 0}
+      <input ref={sellRef} type="number" min="0" step="0.01" value={item.selling_price || 0}
         onChange={e => onChange({ selling_price: parseFloat(e.target.value) || 0 })}
         onFocus={e => e.target.select()}
-        onKeyDown={navKey}
+        onKeyDown={e => rowNav(e, qtyRef, unitRef)}
         className="cart-cell-input text-right rounded-lg border border-slate-200 px-1.5 py-1 text-sm outline-none focus:ring-1 focus:ring-blue-500 w-full text-slate-500" />
-      <input type="number" min="0" step="0.01" value={item.unit_price}
+      <input ref={unitRef} type="number" min="0" step="0.01" value={item.unit_price}
         onChange={e => onChange({ unit_price: parseFloat(e.target.value) || 0 })}
         onFocus={e => e.target.select()}
-        onKeyDown={navKey}
+        onKeyDown={e => rowNav(e, sellRef, discRef)}
         className={`cart-cell-input text-right rounded-lg border px-1.5 py-1 text-sm outline-none focus:ring-1 focus:ring-blue-500 w-full ${priceOverridden ? 'border-amber-400 bg-amber-50 font-semibold' : 'border-slate-200'}`} />
-      <input type="text" inputMode="numeric" pattern="[0-9]*"
+      <input ref={discRef} type="text" inputMode="numeric" pattern="[0-9]*"
         value={Math.floor(item.discount || 0)}
         onChange={e => onChange({ discount: Math.floor(parseInt(e.target.value) || 0) })}
         onFocus={e => e.target.select()}
-        onKeyDown={navKey}
+        onKeyDown={e => rowNav(e, unitRef, null)}
         placeholder="0"
         className="cart-cell-input text-right rounded-lg border border-slate-200 px-1.5 py-1 text-sm outline-none focus:ring-1 focus:ring-blue-500 w-full" />
       <p className="text-right font-bold text-slate-800 text-base">{Number(item.total||0).toLocaleString('en-LK',{minimumFractionDigits:2})}</p>
@@ -538,6 +545,9 @@ export default function SalesCreate() {
   // Search
   const searchRef   = useRef(null);
   const [query, setQuery]     = useState('');
+  // Dedicated scan input
+  const scanRef = useRef(null);
+  const [scanVal, setScanVal] = useState('');
   const [showDrop, setShowDrop] = useState(false);
   const [activeIdx, setActive]  = useState(-1);
 
@@ -688,39 +698,64 @@ export default function SalesCreate() {
   }, [custQuery, customers]);
 
   // ─── Focus helper ──────────────────────────────────────────────────────────
-  const refocus = useCallback(() => setTimeout(() => searchRef.current?.focus(), 50), []);
-  useEffect(() => { searchRef.current?.focus(); }, []);
+  const refocus = useCallback(() => setTimeout(() => scanRef.current?.focus(), 50), []);
+  useEffect(() => { scanRef.current?.focus(); }, []);
 
   // ─── Keyboard shortcuts ───────────────────────────────────────────────────
   useEffect(() => {
     const onKey = e => {
       if (document.activeElement?.tagName === 'INPUT' && e.key !== 'F10' && e.key !== 'F11') return;
-      if (e.key === 'F1')  { e.preventDefault(); searchRef.current?.focus(); }
+      if (e.key === 'F1')  { e.preventDefault(); scanRef.current?.focus(); }
       if (e.key === 'F2')  { e.preventDefault(); setPayMethod('cash');   setTimeout(() => cashInputRef.current?.focus(), 50); }
       if (e.key === 'F3')  { e.preventDefault(); setPayMethod('card'); }
       if (e.key === 'F4')  { e.preventDefault(); setPayMethod('credit'); }
       if (e.key === 'F5')  { e.preventDefault(); setPayMethod('split'); }
-      if (e.key === 'F10') { e.preventDefault(); if (cart.length > 0) handleCompleteSale(false, true); }
-      if (e.key === 'F11') { e.preventDefault(); if (cart.length > 0) handleCompleteSale(true); }
+      if (e.key === 'F10') { e.preventDefault(); if (cart.length > 0 && total > 0) handleCompleteSale(false, true); }
+      if (e.key === 'F11') { e.preventDefault(); if (cart.length > 0 && total > 0) handleCompleteSale(true); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [cart, total, payMethod, cashPaid, cardRef, splitCash, splitCardRef, customer]);
 
-  // ─── Global barcode capture — redirect keystrokes to search when unfocused ─
+  // ─── Global barcode scan — silent cart-add from any focus position ────────
   useEffect(() => {
-    const onGlobalKey = e => {
-      const tag = document.activeElement?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return;
-      if (e.key.length !== 1 || e.ctrlKey || e.altKey || e.metaKey) return;
-      e.preventDefault();
-      searchRef.current?.focus();
-      setQuery(prev => prev + e.key);
-      // Don't open dropdown — let onSearchKeyDown decide after scan detection
+    const SCAN_T = 55, SCAN_MIN = 4;
+    let gChars = '', gTimes = [], gLast = 0;
+
+    const handler = e => {
+      const el  = document.activeElement;
+      const tag = el?.tagName;
+      const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+      if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (!inInput) {
+          const now = Date.now();
+          gTimes.push(gLast > 0 ? now - gLast : 9999);
+          gLast = now;
+          if (gTimes.length > 20) gTimes.shift();
+          gChars += e.key;
+        } else {
+          gChars = ''; gTimes = []; gLast = 0;
+        }
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        const bc = gChars, ts = gTimes.slice();
+        gChars = ''; gTimes = []; gLast = 0;
+        if (inInput) return;
+        const isFast = ts.length >= SCAN_MIN && ts.slice(-SCAN_MIN).every(g => g < SCAN_T);
+        if (!isFast || bc.length < 4) return;
+        e.preventDefault();
+        const hit = products.find(p => p.barcode === bc);
+        if (hit) addToCartRef.current?.(hit, null, false);
+        else setScanNotFound(bc);
+      }
     };
-    window.addEventListener('keydown', onGlobalKey);
-    return () => window.removeEventListener('keydown', onGlobalKey);
-  }, []);
+
+    window.addEventListener('keydown', handler, true);
+    return () => window.removeEventListener('keydown', handler, true);
+  }, [products]);
 
   // ─── Capture original value + reset raw buffer when a cart input gains focus ─
   useEffect(() => {
@@ -795,7 +830,6 @@ export default function SalesCreate() {
           const hit = products.find(p => p.barcode === buf);
           if (hit) addToCartRef.current?.(hit, null, false);
           else setScanNotFound(buf);
-          searchRef.current?.focus();
         }
       }
     };
@@ -1180,8 +1214,32 @@ export default function SalesCreate() {
           <div className="px-4 pt-3 pb-2 space-y-2 shrink-0">
             <Step n="1" label={t('pos.add_products').toUpperCase()} />
 
-            {/* Search bar + mode tabs inline */}
+            {/* Search + Scan inline */}
             <div className="flex gap-2 items-center">
+              {/* Barcode scan input */}
+              <div className="relative w-40 shrink-0">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400">{Icon.barcode}</span>
+                <input
+                  ref={scanRef}
+                  value={scanVal}
+                  onChange={e => setScanVal(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const bc = scanVal.trim();
+                      setScanVal('');
+                      if (!bc) { scanRef.current?.focus(); return; }
+                      const hit = products.find(p => p.barcode === bc);
+                      if (hit) addToCartRef.current?.(hit, null, true);
+                      else { setScanNotFound(bc); setTimeout(() => scanRef.current?.focus(), 50); }
+                    }
+                  }}
+                  placeholder="Barcode…"
+                  className="w-full pl-9 pr-2 py-2 rounded-xl border-2 border-blue-300 bg-blue-50 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-blue-300"
+                />
+              </div>
+
+              {/* Product search input */}
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{Icon.search}</span>
                 <input
@@ -1199,12 +1257,8 @@ export default function SalesCreate() {
                   onKeyDown={onSearchKeyDown}
                   placeholder={ready ? t('pos.search_product') : t('lbl.loading')}
                   readOnly={!ready}
-                  autoFocus
-                  className="w-full pl-9 pr-16 py-2 rounded-xl border border-slate-400 bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-400 bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                 />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-slate-500 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-md transition-colors">
-                  {Icon.barcode} <span>Scan</span>
-                </button>
                 {showDrop && (
                   <ProductDropdown items={dropdownItems} activeIdx={activeIdx}
                     onSelect={p => { addToCart(p, qtyMultiplier); setQtyMultiplier(1); setShowDrop(false); }} />
@@ -1293,13 +1347,13 @@ export default function SalesCreate() {
                       onChange={changes => setCart(prev => prev.map((it, j) => j === i ? recalc({ ...it, ...changes }) : it))}
                       onRemove={() => setCart(prev => prev.filter((_, j) => j !== i))}
                       onZoom={() => setZoomed({ item, idx: i })}
-                      onEnter={() => searchRef.current?.focus()}
+                      onEnter={() => scanRef.current?.focus()}
                       onArrow={dir => {
                         const inputs = document.querySelectorAll('.cart-qty-input');
                         const arr = Array.from(inputs);
                         const idx2 = arr.indexOf(document.activeElement);
                         if (idx2 >= 0 && arr[idx2 + dir]) { arr[idx2 + dir].focus(); arr[idx2 + dir].select(); }
-                        else if (idx2 + dir < 0) searchRef.current?.focus();
+                        else if (idx2 + dir < 0) scanRef.current?.focus();
                       }}
                     />
                   ))}
@@ -1316,26 +1370,26 @@ export default function SalesCreate() {
 
           {/* ⚡ Fast products */}
           {fastProducts.length > 0 && (
-            <div className="shrink-0 px-4 pb-3">
-              <div className="flex items-center gap-1.5 mb-2">
+            <div className="shrink-0 px-4 pb-2">
+              <div className="flex items-center gap-1 mb-1.5">
                 <span className="text-yellow-500">{Icon.lightning}</span>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('pos.fast_moving')}</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('pos.fast_moving')}</span>
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
                 {fastProducts.map(p => (
                   <button key={p.id} onMouseDown={() => addToCart(p)}
-                    className="shrink-0 w-24 bg-white rounded-xl border border-slate-300 shadow-sm p-2 text-left hover:border-blue-400 hover:shadow-md transition-all">
-                    <div className="w-full aspect-square bg-slate-100 rounded-lg mb-1.5 flex items-center justify-center overflow-hidden">
+                    className="shrink-0 w-16 bg-white rounded-lg border border-slate-200 shadow-sm p-1.5 text-left hover:border-blue-400 hover:shadow-md transition-all">
+                    <div className="w-full h-8 bg-slate-100 rounded-md mb-1 flex items-center justify-center overflow-hidden">
                       {p.image ? (
                         <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-200 text-blue-700 text-2xl font-black">
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-200 text-blue-700 text-sm font-black">
                           {p.name?.[0]?.toUpperCase()}
                         </div>
                       )}
                     </div>
-                    <p className="text-xs font-semibold text-slate-700 truncate leading-tight">{p.name}</p>
-                    <p className="text-xs font-bold text-blue-600 mt-0.5">Rs. {fmt(p.our_price ?? p.promo_price ?? p.selling_price)}</p>
+                    <p className="text-[10px] font-semibold text-slate-700 truncate leading-tight">{p.name}</p>
+                    <p className="text-[10px] font-bold text-blue-600">Rs. {fmt(p.our_price ?? p.promo_price ?? p.selling_price)}</p>
                   </button>
                 ))}
               </div>
@@ -1582,7 +1636,7 @@ export default function SalesCreate() {
             <div className="flex gap-2 mb-2">
               {/* Main button */}
               <button
-                disabled={cart.length === 0 || submitting}
+                disabled={cart.length === 0 || total === 0 || submitting}
                 onClick={() => handleCompleteSale(false, true)}
                 className="flex-1 flex items-center justify-center gap-2 py-4 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 text-white rounded-xl font-bold text-sm transition-colors shadow-lg ring-1 ring-blue-300/60"
               >
@@ -1593,7 +1647,7 @@ export default function SalesCreate() {
 
               {/* Save only */}
               <button
-                disabled={cart.length === 0 || submitting}
+                disabled={cart.length === 0 || total === 0 || submitting}
                 onClick={() => handleCompleteSale(true)}
                 className="flex flex-col items-center justify-center gap-0.5 px-3 py-2 border-2 border-slate-300 hover:border-slate-400 disabled:opacity-40 text-slate-600 rounded-xl text-xs font-semibold transition-colors shadow-md"
               >

@@ -37,13 +37,13 @@ module.exports = {
     password: 'Pos@2026Strong',
   },
   localhost: {
-   database: 'lover_pos',
+   database: 'anura_v2',
     username: 'root',
     password: 'root',
     host: '127.0.0.1',
   },
   '127.0.0.1': {
-    database: 'lover_pos',
+    database: 'anura_v2',
     username: 'root',
     password: 'root',
     host: '127.0.0.1',

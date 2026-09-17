@@ -398,9 +398,9 @@ export default function SaleShow() {
               ) : null;
             })()}
             {parseFloat(sale.discount) > 0 && (
-              <div className="flex justify-between items-center border-2 border-slate-300 rounded-lg px-3 py-1.5 bg-slate-50">
-                <span className="text-black font-bold text-[11px]">{t('lbl.earned_profit')}</span>
-                <span className="text-black font-extrabold text-[11px]">- {fmt(sale.discount)}</span>
+              <div className="flex justify-between items-center border-2 border-slate-300 rounded-lg px-4 py-2.5 bg-slate-50">
+                <span className="text-black font-bold text-base">{t('lbl.earned_profit')}</span>
+                <span className="text-black font-extrabold text-base">- {fmt(sale.discount)}</span>
               </div>
             )}
 
