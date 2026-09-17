@@ -1657,14 +1657,24 @@ export default function SalesCreate() {
               </button>
             </div>
 
-            {/* Hold Bill */}
+            {/* Hold Bill + Clear Cart */}
+            <div className="flex gap-2">
             <button
               disabled={cart.length === 0}
               onClick={() => setHoldModal(true)}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-amber-400 hover:bg-amber-500 disabled:bg-amber-100 disabled:text-amber-400 disabled:cursor-not-allowed text-amber-900 rounded-xl font-bold text-sm transition-colors shadow-lg ring-1 ring-amber-300/60"
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-amber-400 hover:bg-amber-500 disabled:bg-amber-100 disabled:text-amber-400 disabled:cursor-not-allowed text-amber-900 rounded-xl font-bold text-sm transition-colors shadow-lg ring-1 ring-amber-300/60"
             >
               {Icon.pause} {t('pos.hold_btn')}
             </button>
+            <button
+              disabled={cart.length === 0}
+              onClick={() => { setCart([]); setCustomer(null); setCustQuery(''); setBillDisc(''); refocus(); }}
+              className="flex items-center justify-center gap-1.5 px-4 py-3 bg-red-100 hover:bg-red-200 disabled:opacity-40 disabled:cursor-not-allowed text-red-700 rounded-xl font-bold text-sm transition-colors shadow-md border border-red-200"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              Clear
+            </button>
+            </div>
           </div>
         </div>
       </div>
