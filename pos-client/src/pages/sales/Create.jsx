@@ -747,7 +747,7 @@ export default function SalesCreate() {
         const isFast = ts.length >= SCAN_MIN && ts.slice(-SCAN_MIN).every(g => g < SCAN_T);
         if (!isFast || bc.length < 4) return;
         e.preventDefault();
-        const hit = products.find(p => p.barcode === bc);
+        const hit = products.find(p => p.barcode?.toLowerCase() === bc.toLowerCase());
         if (hit) addToCartRef.current?.(hit, null, false);
         else setScanNotFound(bc);
       }
@@ -827,7 +827,7 @@ export default function SalesCreate() {
           setter.call(el, orig);
           el.dispatchEvent(new Event('input', { bubbles: true }));
 
-          const hit = products.find(p => p.barcode === buf);
+          const hit = products.find(p => p.barcode?.toLowerCase() === buf.toLowerCase());
           if (hit) addToCartRef.current?.(hit, null, false);
           else setScanNotFound(buf);
         }
@@ -855,7 +855,7 @@ export default function SalesCreate() {
     const bc = location.state?.barcode;
     if (!bc || !ready || autoBarcodeDone.current) return;
     autoBarcodeDone.current = true;
-    const hit = products.find(p => p.barcode === bc);
+    const hit = products.find(p => p.barcode?.toLowerCase() === bc.toLowerCase());
     if (hit) addToCart(hit, null, false);
     else setScanNotFound(bc);
     navigate(location.pathname, { replace: true, state: {} });
@@ -931,7 +931,7 @@ export default function SalesCreate() {
       if (isScan.current && query.trim()) {
         const bc = query.trim();
         isScan.current = false; keyIntervals.current = []; lastKeyTime.current = 0;
-        const hit = products.find(p => p.barcode === bc);
+        const hit = products.find(p => p.barcode?.toLowerCase() === bc.toLowerCase());
         if (hit) addToCart(hit, qtyMultiplier, false);
         else setScanNotFound(bc);
         setQtyMultiplier(1); setQuery(''); setShowDrop(false); refocus(); return;
@@ -1229,7 +1229,7 @@ export default function SalesCreate() {
                       const bc = scanVal.trim();
                       setScanVal('');
                       if (!bc) { scanRef.current?.focus(); return; }
-                      const hit = products.find(p => p.barcode === bc);
+                      const hit = products.find(p => p.barcode?.toLowerCase() === bc.toLowerCase());
                       if (hit) addToCartRef.current?.(hit, null, true);
                       else { setScanNotFound(bc); setTimeout(() => scanRef.current?.focus(), 50); }
                     }
