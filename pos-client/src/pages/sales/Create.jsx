@@ -1414,7 +1414,7 @@ export default function SalesCreate() {
                 className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${discType === 'amount' ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Rs</button>
               {[0, 5, 10, 15, 20].map(pct => (
                 <button key={pct} onClick={() => { if (pct === 0) { setBillDisc('0'); setDiscType('percent'); } else { setDiscType('percent'); setBillDisc(String(pct)); } }}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${discType === 'percent' && billDiscount === String(pct) ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors ${discType === 'percent' && billDiscount === String(pct) ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-100 text-slate-700 border-slate-800 hover:bg-slate-200'}`}>
                   {pct === 0 ? '0' : `${pct}%`}
                 </button>
               ))}
