@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { selectToken } from '../../features/auth/authSlice';
 import { getApiUrl } from '../../config/runtimeConfig';
@@ -172,7 +172,8 @@ function TenantTable({ token }) {
           </thead>
           <tbody className="divide-y divide-slate-50">
             {tenants.map(t => (
-              <tr key={t.id} className={editId === t.id ? 'bg-blue-50' : 'hover:bg-slate-50'}>
+              <React.Fragment key={t.id}>
+              <tr className={editId === t.id ? 'bg-blue-50' : 'hover:bg-slate-50'}>
                 {EDIT_FIELDS.map(({ key, secret }) => (
                   <td key={key} className="px-4 py-2.5 whitespace-nowrap">
                     {editId === t.id ? (
@@ -226,7 +227,6 @@ function TenantTable({ token }) {
                 </td>
               </tr>
 
-              {/* Migration result row */}
               {migrateResult[t.id] && (
                 <tr>
                   <td colSpan={EDIT_FIELDS.length + 2} className="px-4 pb-2.5">
@@ -246,6 +246,7 @@ function TenantTable({ token }) {
                   </td>
                 </tr>
               )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>
