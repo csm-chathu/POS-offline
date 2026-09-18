@@ -256,9 +256,26 @@ function TenantTable({ token }) {
 }
 
 function MigratePanel({ token }) {
-  const [lines, setLines]     = useState([]);
-  const [running, setRunning] = useState(false);
-  const [done, setDone]       = useState(false);
+  const [lines, setLines]       = useState([]);
+  const [running, setRunning]   = useState(false);
+  const [done, setDone]         = useState(false);
+  const [seeding, setSeeding]   = useState(false);
+  const [seedMsg, setSeedMsg]   = useState('');
+
+  async function seedFeatures() {
+    setSeeding(true);
+    setSeedMsg('');
+    try {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const r = await fetch(`${API}/api/tenants/seed-master-features`, { method: 'POST', headers });
+      const data = await r.json();
+      setSeedMsg(data.ok ? `✓ ${data.count} features seeded into pos_master` : (data.error || 'Failed'));
+    } catch (err) {
+      setSeedMsg(`Error: ${err.message}`);
+    } finally {
+      setSeeding(false);
+    }
+  }
 
   async function runMigrations() {
     setLines([]);
@@ -300,15 +317,31 @@ function MigratePanel({ token }) {
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Database Migrations</p>
           <p className="text-xs text-slate-400 mt-0.5">Run pending SQL migrations on all active tenant databases</p>
         </div>
-        <button
-          onClick={runMigrations}
-          disabled={running}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 disabled:opacity-60 transition-colors"
-        >
-          {running && <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>}
-          {running ? 'Running…' : 'Run Migrations'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={seedFeatures}
+            disabled={seeding}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 disabled:opacity-60 transition-colors"
+          >
+            {seeding && <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>}
+            {seeding ? 'Seeding…' : 'Seed Master Features'}
+          </button>
+          <button
+            onClick={runMigrations}
+            disabled={running}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+          >
+            {running && <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>}
+            {running ? 'Running…' : 'Run Migrations'}
+          </button>
+        </div>
       </div>
+
+      {seedMsg && (
+        <div className={`px-5 py-2.5 text-xs font-medium border-t ${seedMsg.startsWith('✓') ? 'text-green-700 bg-green-50 border-green-100' : 'text-red-600 bg-red-50 border-red-100'}`}>
+          {seedMsg}
+        </div>
+      )}
 
       {lines.length > 0 && (
         <ul className="divide-y divide-slate-50 max-h-64 overflow-y-auto">
