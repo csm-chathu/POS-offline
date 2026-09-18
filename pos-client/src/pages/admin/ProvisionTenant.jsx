@@ -210,6 +210,86 @@ function TenantTable({ token }) {
   );
 }
 
+function MigratePanel({ token }) {
+  const [lines, setLines]     = useState([]);
+  const [running, setRunning] = useState(false);
+  const [done, setDone]       = useState(false);
+
+  async function runMigrations() {
+    setLines([]);
+    setDone(false);
+    setRunning(true);
+    try {
+      const resp = await fetch(`${API}/api/tenants/migrate-all`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const reader  = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { done: streamDone, value } = await reader.read();
+        if (streamDone) break;
+        buf += decoder.decode(value, { stream: true });
+        const parts = buf.split('\n');
+        buf = parts.pop();
+        for (const part of parts) {
+          if (!part.startsWith('data:')) continue;
+          const payload = JSON.parse(part.slice(5).trim());
+          if (payload.status === 'done') { setDone(true); continue; }
+          setLines(l => [...l, payload]);
+        }
+      }
+    } catch (err) {
+      setLines(l => [...l, { tenant: '', message: err.message, status: 'error' }]);
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Database Migrations</p>
+          <p className="text-xs text-slate-400 mt-0.5">Run pending SQL migrations on all active tenant databases</p>
+        </div>
+        <button
+          onClick={runMigrations}
+          disabled={running}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+        >
+          {running && <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>}
+          {running ? 'Running…' : 'Run Migrations'}
+        </button>
+      </div>
+
+      {lines.length > 0 && (
+        <ul className="divide-y divide-slate-50 max-h-64 overflow-y-auto">
+          {lines.map((l, i) => (
+            <li key={i} className="flex items-start gap-3 px-5 py-2.5 text-xs">
+              {l.status === 'error' ? IconError : IconCheck}
+              <div>
+                {l.tenant && <span className="font-semibold text-slate-600 mr-1.5">{l.tenant}</span>}
+                <span className={l.status === 'error' ? 'text-red-600' : 'text-slate-600'}>{l.message}</span>
+              </div>
+            </li>
+          ))}
+          {done && (
+            <li className="px-5 py-2.5 text-xs font-bold text-green-600 bg-green-50">All tenants processed.</li>
+          )}
+        </ul>
+      )}
+
+      {!lines.length && !running && (
+        <div className="px-5 py-4 text-xs text-slate-400">
+          Click "Run Migrations" to apply any pending SQL migration files to all active tenant databases.
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProvisionTenant() {
   const token = useSelector(selectToken);
   const [form, setForm]       = useState(DEFAULT);
@@ -394,8 +474,13 @@ export default function ProvisionTenant() {
         </div>
       </div>
 
-      {/* ── Tenant list ───────────────────────────────────────────────── */}
+      {/* ── Migrations ────────────────────────────────────────────────── */}
       <div className="mt-8">
+        <MigratePanel token={token} />
+      </div>
+
+      {/* ── Tenant list ───────────────────────────────────────────────── */}
+      <div className="mt-6">
         <TenantTable key={tableKey} token={token} />
       </div>
     </div>

@@ -5,6 +5,7 @@ const auth          = require('../middleware/auth');
 const getModels     = require('../models');
 const { getMasterDb } = require('../config/masterDb');
 const { bustCache } = require('../config/tenantCache');
+const { runMigrations } = require('../lib/migrationRunner');
 
 // POST /api/tenants/provision — streams progress via Server-Sent Events
 router.post('/provision', auth, async (req, res) => {
@@ -136,6 +137,51 @@ router.post('/provision', auth, async (req, res) => {
   } finally {
     res.end();
   }
+});
+
+// POST /api/tenants/migrate-all — run pending migrations on every active tenant
+router.post('/migrate-all', auth, async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  function send(tenant, message, status = 'ok') {
+    res.write(`data: ${JSON.stringify({ tenant, message, status })}\n\n`);
+  }
+
+  const { Tenant } = getMasterDb();
+  const tenants = await Tenant.findAll({ where: { active: true }, order: [['id', 'ASC']] });
+
+  for (const t of tenants) {
+    const label = `${t.hostname} (${t.db_name})`;
+    try {
+      const seq = new Sequelize(t.db_name, t.db_user, t.db_password, {
+        host: t.db_host, port: parseInt(t.db_port), dialect: 'mysql', logging: false,
+        pool: { max: 3, min: 0, acquire: 15000, idle: 5000 },
+        define: { timestamps: true, createdAt: 'created_at', updatedAt: 'updated_at', underscored: true },
+      });
+
+      const results = await runMigrations(seq);
+      await seq.close();
+
+      const applied = results.filter(r => r.status === 'applied');
+      const skipped = results.filter(r => r.status === 'skipped');
+
+      if (applied.length === 0) {
+        send(label, `up to date (${skipped.length} already applied)`);
+      } else {
+        for (const r of applied) {
+          send(label, `applied: ${r.file}`);
+        }
+      }
+    } catch (err) {
+      send(label, `error: ${err.message}`, 'error');
+    }
+  }
+
+  send('', 'done', 'done');
+  res.end();
 });
 
 // GET /api/tenants
