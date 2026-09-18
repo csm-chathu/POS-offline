@@ -224,14 +224,33 @@ router.post('/:id/seed-features', async (req, res) => {
 
   try {
     const db = `\`${t.db_name}\``;
-    await master.query(
-      `INSERT INTO ${db}.features (\`key\`, label, path, \`group\`, sort_order, icon, offline_ok)
-       SELECT \`key\`, label, path, \`group\`, sort_order, icon, offline_ok
-       FROM pos_master.features
-       ON DUPLICATE KEY UPDATE
-         label=VALUES(label), path=VALUES(path), \`group\`=VALUES(\`group\`),
-         sort_order=VALUES(sort_order), icon=VALUES(icon), offline_ok=VALUES(offline_ok)`
+    // Detect whether tenant DB has the extra columns added by migration 002
+    const [cols] = await master.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'features' AND COLUMN_NAME IN ('icon','offline_ok')`,
+      { replacements: [t.db_name] }
     );
+    const hasExtras = cols.length === 2;
+
+    if (hasExtras) {
+      await master.query(
+        `INSERT INTO ${db}.features (\`key\`, label, path, \`group\`, sort_order, icon, offline_ok)
+         SELECT \`key\`, label, path, \`group\`, sort_order, icon, offline_ok
+         FROM pos_master.features
+         ON DUPLICATE KEY UPDATE
+           label=VALUES(label), path=VALUES(path), \`group\`=VALUES(\`group\`),
+           sort_order=VALUES(sort_order), icon=VALUES(icon), offline_ok=VALUES(offline_ok)`
+      );
+    } else {
+      await master.query(
+        `INSERT INTO ${db}.features (\`key\`, label, path, \`group\`, sort_order)
+         SELECT \`key\`, label, path, \`group\`, sort_order
+         FROM pos_master.features
+         ON DUPLICATE KEY UPDATE
+           label=VALUES(label), path=VALUES(path), \`group\`=VALUES(\`group\`),
+           sort_order=VALUES(sort_order)`
+      );
+    }
     const [[{ total }]] = await master.query(`SELECT COUNT(*) AS total FROM ${db}.features`);
     res.json({ ok: true, count: total });
   } catch (err) {

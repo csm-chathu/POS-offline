@@ -1,7 +1,7 @@
 const fs   = require('fs');
 const path = require('path');
 
-const MIGRATIONS_DIR = path.join(__dirname, '../../_pos_migrations');
+const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 
 async function runMigrations(sequelize) {
   // Ensure tracking table exists
