@@ -220,9 +220,10 @@ function MigratePanel({ token }) {
     setDone(false);
     setRunning(true);
     try {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const resp = await fetch(`${API}/api/tenants/migrate-all`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       });
       const reader  = resp.body.getReader();
       const decoder = new TextDecoder();
