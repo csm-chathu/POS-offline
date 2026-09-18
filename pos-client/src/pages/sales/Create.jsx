@@ -217,7 +217,7 @@ function CartRow({ item, onChange, onRemove, onZoom, onEnter, onArrow, highlight
   };
 
   return (
-    <div className={`grid items-center gap-2 px-4 py-2.5 text-sm transition-all duration-700 ${highlight ? 'bg-green-100 ring-2 ring-green-400' : overStock ? 'bg-orange-50' : 'bg-slate-100 hover:bg-slate-200'}`}
+    <div className={`grid items-center gap-2 px-4 py-2.5 text-sm transition-all duration-700 border-b border-slate-200 ${highlight ? 'bg-green-100 ring-2 ring-green-400' : overStock ? 'bg-orange-50' : 'bg-slate-100 hover:bg-slate-200'}`}
       style={{ gridTemplateColumns: 'minmax(0,1fr) 60px 88px 88px 72px 92px 24px' }}>
       <button type="button" onClick={onZoom} className="min-w-0 text-left">
         <p className="font-semibold text-slate-800 truncate leading-tight">{isSinhala && item.name_si ? item.name_si : item.name}</p>

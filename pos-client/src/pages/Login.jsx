@@ -156,7 +156,6 @@ export default function Login() {
         <h1 className="text-xl font-bold text-slate-800 tracking-tight">
           {appInfo.shop_name || 'LMUC POS'}
         </h1>
-        <p className="text-sm text-slate-500">Point of Sale System</p>
       </div>
 
       {/* Card */}
