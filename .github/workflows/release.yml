@@ -15,6 +15,21 @@ jobs:
         with:
           node-version: 20
 
+      - name: Create published GitHub Release
+        id: create_release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: context.ref.replace('refs/tags/', ''),
+              name: context.ref.replace('refs/tags/', ''),
+              draft: false,
+              prerelease: false,
+            });
+            core.setOutput('upload_url', release.data.upload_url);
+
       - name: Install electron deps
         working-directory: electron
         run: npm install
@@ -23,5 +38,4 @@ jobs:
         working-directory: electron
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          EP_DRAFT: false
         run: npx electron-builder --config electron-builder.config.js --win nsis --publish always
