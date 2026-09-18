@@ -159,7 +159,7 @@ export default function Login() {
       </div>
 
       {/* Card */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-white rounded-2xl shadow-lg p-8">
         {serverError && (
           <div className="mb-4 px-3 py-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
             <div className="flex items-start gap-2.5 mb-2">
@@ -230,7 +230,7 @@ export default function Login() {
 
           <button
             type="submit" disabled={isLoading}
-            className="w-full py-2.5 rounded-lg bg-blue-600 text-white font-semibold text-sm disabled:opacity-60 hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm flex items-center justify-center gap-2"
+            className="w-full py-2.5 rounded-lg bg-green-600 text-white font-semibold text-sm disabled:opacity-60 hover:bg-green-700 active:bg-green-800 transition-colors shadow-sm flex items-center justify-center gap-2"
           >
             {isLoading && (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
