@@ -15,16 +15,6 @@ jobs:
         with:
           node-version: 20
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Install Electron deps
         working-directory: Electron
         run: npm install
@@ -33,4 +23,5 @@ jobs:
         working-directory: Electron
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EP_DRAFT: false
         run: npx electron-builder --config electron-builder.config.js --win nsis --publish always
