@@ -131,10 +131,10 @@ export const router = createAppRouter([
             {
               element: <AdminOnlyRoute />,
               children: [
-                { path: 'admin/data-import',      element: <ImportDataPage /> },
-                { path: 'admin/provision-tenant', element: <ProvisionTenant /> },
+                { path: 'admin/data-import', element: <ImportDataPage /> },
               ],
             },
+            { path: 'admin/provision-tenant', element: <ProvisionTenant /> },
           ],
         },
       ],

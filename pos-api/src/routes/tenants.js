@@ -140,7 +140,7 @@ router.post('/provision', auth, async (req, res) => {
 });
 
 // POST /api/tenants/migrate-all — run pending migrations on every active tenant
-router.post('/migrate-all', auth, async (req, res) => {
+router.post('/migrate-all', async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
