@@ -1,20 +1,20 @@
 const fs   = require('fs');
 const path = require('path');
 
-const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
+const MIGRATIONS_DIR = path.join(__dirname, '../../_pos_migrations');
 
 async function runMigrations(sequelize) {
   // Ensure tracking table exists
   await sequelize.query(`
-    CREATE TABLE IF NOT EXISTS migrations (
+    CREATE TABLE IF NOT EXISTS _pos_migrations (
       id         INT AUTO_INCREMENT PRIMARY KEY,
       name       VARCHAR(255) NOT NULL UNIQUE,
       applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // Get already-applied migrations
-  const [applied] = await sequelize.query('SELECT name FROM migrations');
+  // Get already-applied _pos_migrations
+  const [applied] = await sequelize.query('SELECT name FROM _pos_migrations');
   const appliedSet = new Set(applied.map(r => r.name));
 
   // Read migration files sorted
@@ -44,7 +44,7 @@ async function runMigrations(sequelize) {
       }
     }
 
-    await sequelize.query('INSERT INTO migrations (name) VALUES (?)', {
+    await sequelize.query('INSERT INTO _pos_migrations (name) VALUES (?)', {
       replacements: [file],
     });
 
