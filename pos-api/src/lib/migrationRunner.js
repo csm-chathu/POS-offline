@@ -35,7 +35,13 @@ async function runMigrations(sequelize) {
     // Split on semicolons, run each non-empty statement
     const statements = sql.split(';').map(s => s.trim()).filter(Boolean);
     for (const stmt of statements) {
-      await sequelize.query(stmt);
+      try {
+        await sequelize.query(stmt);
+      } catch (err) {
+        // 1060 = duplicate column — column already exists, safe to skip
+        if (err.original?.errno === 1060 || err.parent?.errno === 1060) continue;
+        throw err;
+      }
     }
 
     await sequelize.query('INSERT INTO migrations (name) VALUES (?)', {
