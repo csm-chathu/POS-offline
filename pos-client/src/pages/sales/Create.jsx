@@ -582,6 +582,7 @@ export default function SalesCreate() {
   // Payment (inline)
   const [payMethod, setPayMethod] = useState('cash');
   const [cashPaid, setCashPaid]   = useState('');
+  const [cashFocused, setCashFocused] = useState(false);
   const [shakeInput, setShakeInput] = useState(false);
   const [cardRef, setCardRef]     = useState('');
   const [splitCash, setSplitCash] = useState('');
@@ -1207,7 +1208,7 @@ export default function SalesCreate() {
 
         {/* ═══ LEFT PANEL (Cart / Products) ════════════════════════════════════ */}
         <div className={`flex flex-col min-w-0 overflow-hidden
-          w-full lg:w-[60%]
+          w-full lg:w-[65%]
           ${mobileTab === 'pay' ? 'hidden lg:flex' : 'flex'}`}>
 
           {/* Section header + search + tabs */}
@@ -1368,38 +1369,11 @@ export default function SalesCreate() {
             )}
           </div>
 
-          {/* ⚡ Fast products */}
-          {fastProducts.length > 0 && (
-            <div className="shrink-0 px-4 pb-2">
-              <div className="flex items-center gap-1 mb-1.5">
-                <span className="text-yellow-500">{Icon.lightning}</span>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('pos.fast_moving')}</span>
-              </div>
-              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-                {fastProducts.map(p => (
-                  <button key={p.id} onMouseDown={() => addToCart(p)}
-                    className="shrink-0 w-16 bg-white rounded-lg border border-slate-200 shadow-sm p-1.5 text-left hover:border-blue-400 hover:shadow-md transition-all">
-                    <div className="w-full h-8 bg-slate-100 rounded-md mb-1 flex items-center justify-center overflow-hidden">
-                      {p.image ? (
-                        <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-200 text-blue-700 text-sm font-black">
-                          {p.name?.[0]?.toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[10px] font-semibold text-slate-700 truncate leading-tight">{p.name}</p>
-                    <p className="text-[10px] font-bold text-blue-600">Rs. {fmt(p.our_price ?? p.promo_price ?? p.selling_price)}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* ═══ RIGHT PANEL (Payment) ═══════════════════════════════════════════ */}
         <div className={`bg-slate-50 border-l border-slate-200 flex-col shrink-0 overflow-y-auto
-          w-full lg:w-[40%]
+          w-full lg:w-[35%]
           ${mobileTab === 'cart' ? 'hidden lg:flex' : 'flex'}`}>
 
           {/* Discount + Grand Total */}
@@ -1506,9 +1480,11 @@ export default function SalesCreate() {
                   </div>
                   <div className="flex-1">
                     <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">{t('pos.cash_paid_label')}</span>
-                    <input ref={cashInputRef} type="number" min="0" step="0.01" value={cashPaid}
-                      onChange={e => { setCashPaid(e.target.value); setShakeInput(false); }}
-                      onFocus={e => e.target.select()}
+                    <input ref={cashInputRef} type="text" inputMode="numeric"
+                      value={cashFocused ? cashPaid : (cashPaid ? Number(cashPaid).toLocaleString('en-LK', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '')}
+                      onChange={e => { setCashPaid(e.target.value.replace(/,/g, '')); setShakeInput(false); }}
+                      onFocus={e => { setCashFocused(true); setTimeout(() => e.target.select(), 0); }}
+                      onBlur={() => setCashFocused(false)}
                       onKeyDown={e => { if (e.key === 'Enter') handleCompleteSale(false, true); }}
                       placeholder="0.00"
                       className={`w-full rounded-xl border-2 px-3 py-3.5 text-3xl font-bold text-right outline-none transition-colors ${shakeInput ? 'shake border-red-500 bg-red-50' : 'border-green-500 bg-green-50 focus:border-green-600'}`} />

@@ -22,6 +22,6 @@ module.exports = {
     provider: 'github',
     owner: 'csm-chathuranga',
     repo: 'POS',
-    private: true,
+    releaseType: 'release',
   },
 };
