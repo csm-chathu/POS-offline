@@ -216,6 +216,29 @@ router.post('/migrate-all', async (req, res) => {
   res.end();
 });
 
+// POST /api/tenants/:id/seed-features — copy features from pos_master into tenant DB
+router.post('/:id/seed-features', async (req, res) => {
+  const { master, Tenant } = getMasterDb();
+  const t = await Tenant.findByPk(req.params.id);
+  if (!t) return res.status(404).json({ error: 'Tenant not found' });
+
+  try {
+    const db = `\`${t.db_name}\``;
+    await master.query(
+      `INSERT INTO ${db}.features (\`key\`, label, path, \`group\`, sort_order, icon, offline_ok)
+       SELECT \`key\`, label, path, \`group\`, sort_order, icon, offline_ok
+       FROM pos_master.features
+       ON DUPLICATE KEY UPDATE
+         label=VALUES(label), path=VALUES(path), \`group\`=VALUES(\`group\`),
+         sort_order=VALUES(sort_order), icon=VALUES(icon), offline_ok=VALUES(offline_ok)`
+    );
+    const [[{ total }]] = await master.query(`SELECT COUNT(*) AS total FROM ${db}.features`);
+    res.json({ ok: true, count: total });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/tenants/:id/migrate — run pending migrations on one tenant
 router.post('/:id/migrate', async (req, res) => {
   const { Tenant } = getMasterDb();

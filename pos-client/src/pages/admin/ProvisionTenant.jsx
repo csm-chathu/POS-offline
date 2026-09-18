@@ -105,6 +105,8 @@ function TenantTable({ token }) {
   const [showPw, setShowPw]       = useState({});
   const [migrating, setMigrating] = useState({});  // id → true/false
   const [migrateResult, setMigrateResult] = useState({}); // id → { ok, results, error }
+  const [seeding, setSeeding]     = useState({});  // id → true/false
+  const [seedResult, setSeedResult] = useState({}); // id → { ok, count, error }
 
   useEffect(() => { load(); }, []);
 
@@ -142,6 +144,21 @@ function TenantTable({ token }) {
       setMigrateResult(res => ({ ...res, [t.id]: { error: err.message } }));
     } finally {
       setMigrating(m => ({ ...m, [t.id]: false }));
+    }
+  }
+
+  async function seedTenant(t) {
+    setSeeding(s => ({ ...s, [t.id]: true }));
+    setSeedResult(r => ({ ...r, [t.id]: null }));
+    try {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const r = await fetch(`${API}/api/tenants/${t.id}/seed-features`, { method: 'POST', headers });
+      const data = await r.json();
+      setSeedResult(res => ({ ...res, [t.id]: data }));
+    } catch (err) {
+      setSeedResult(res => ({ ...res, [t.id]: { error: err.message } }));
+    } finally {
+      setSeeding(s => ({ ...s, [t.id]: false }));
     }
   }
 
@@ -222,6 +239,10 @@ function TenantTable({ token }) {
                         className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 disabled:opacity-60 whitespace-nowrap">
                         {migrating[t.id] ? '…' : 'Migrate'}
                       </button>
+                      <button onClick={() => seedTenant(t)} disabled={seeding[t.id]}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 disabled:opacity-60 whitespace-nowrap">
+                        {seeding[t.id] ? '…' : 'Seed Features'}
+                      </button>
                     </div>
                   )}
                 </td>
@@ -241,6 +262,19 @@ function TenantTable({ token }) {
                             <span className="text-slate-400">({r.status})</span>
                           </div>
                         ))}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              )}
+              {seedResult[t.id] && (
+                <tr>
+                  <td colSpan={EDIT_FIELDS.length + 2} className="px-4 pb-2.5">
+                    {seedResult[t.id].error ? (
+                      <div className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{seedResult[t.id].error}</div>
+                    ) : (
+                      <div className="text-xs text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
+                        Features seeded — {seedResult[t.id].count} total in DB
                       </div>
                     )}
                   </td>
