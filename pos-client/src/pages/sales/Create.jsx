@@ -397,7 +397,7 @@ function Receipt({ sale, settings, user, onClose }) {
   useEffect(() => {
     if (printedRef.current) return;
     printedRef.current = true;
-    handlePrint();
+    if (settings?.auto_print === 'true') handlePrint();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

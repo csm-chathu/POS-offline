@@ -143,6 +143,7 @@ export default function Settings() {
         sidebar_theme:     'slate',
         primary_color:     'blue',
         show_price_label:  'true',
+        auto_print:        'false',
         pos_auto_scale:    '1',
         pos_scale_value:   '100',
         pos_interface:     '1',
@@ -374,6 +375,13 @@ export default function Settings() {
                 <p className="text-xs text-slate-500 mt-0.5">Print selling price below the barcode</p>
               </div>
               <Toggle checked={bool('show_price_label')} onChange={v => set('show_price_label', String(v))} color="bg-violet-500" />
+            </div>
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">Auto Print Receipt</p>
+                <p className="text-xs text-slate-500 mt-0.5">Automatically send receipt to printer after each sale completes</p>
+              </div>
+              <Toggle checked={bool('auto_print')} onChange={v => set('auto_print', String(v))} color="bg-violet-500" />
             </div>
           </Card>
 
