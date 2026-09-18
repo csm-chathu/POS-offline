@@ -98,11 +98,13 @@ const EDIT_FIELDS = [
 ];
 
 function TenantTable({ token }) {
-  const [tenants, setTenants]   = useState([]);
-  const [editId, setEditId]     = useState(null);
-  const [editRow, setEditRow]   = useState({});
-  const [saving, setSaving]     = useState(false);
-  const [showPw, setShowPw]     = useState({});
+  const [tenants, setTenants]     = useState([]);
+  const [editId, setEditId]       = useState(null);
+  const [editRow, setEditRow]     = useState({});
+  const [saving, setSaving]       = useState(false);
+  const [showPw, setShowPw]       = useState({});
+  const [migrating, setMigrating] = useState({});  // id → true/false
+  const [migrateResult, setMigrateResult] = useState({}); // id → { ok, results, error }
 
   useEffect(() => { load(); }, []);
 
@@ -126,6 +128,21 @@ function TenantTable({ token }) {
     setSaving(false);
     setEditId(null);
     load();
+  }
+
+  async function migrateTenant(t) {
+    setMigrating(m => ({ ...m, [t.id]: true }));
+    setMigrateResult(r => ({ ...r, [t.id]: null }));
+    try {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const r = await fetch(`${API}/api/tenants/${t.id}/migrate`, { method: 'POST', headers });
+      const data = await r.json();
+      setMigrateResult(res => ({ ...res, [t.id]: data }));
+    } catch (err) {
+      setMigrateResult(res => ({ ...res, [t.id]: { error: err.message } }));
+    } finally {
+      setMigrating(m => ({ ...m, [t.id]: false }));
+    }
   }
 
   async function toggleActive(t) {
@@ -195,13 +212,40 @@ function TenantTable({ token }) {
                       </button>
                     </div>
                   ) : (
-                    <button onClick={() => startEdit(t)}
-                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">
-                      Edit
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => startEdit(t)}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        Edit
+                      </button>
+                      <button onClick={() => migrateTenant(t)} disabled={migrating[t.id]}
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 disabled:opacity-60 whitespace-nowrap">
+                        {migrating[t.id] ? '…' : 'Migrate'}
+                      </button>
+                    </div>
                   )}
                 </td>
               </tr>
+
+              {/* Migration result row */}
+              {migrateResult[t.id] && (
+                <tr>
+                  <td colSpan={EDIT_FIELDS.length + 2} className="px-4 pb-2.5">
+                    {migrateResult[t.id].error ? (
+                      <div className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{migrateResult[t.id].error}</div>
+                    ) : (
+                      <div className="text-xs bg-slate-50 rounded-lg px-3 py-2 space-y-0.5">
+                        {migrateResult[t.id].results?.map((r, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            {r.status === 'applied' ? IconCheck : <span className="w-4 h-4 shrink-0 text-slate-300">–</span>}
+                            <span className={r.status === 'applied' ? 'text-green-700 font-semibold' : 'text-slate-400'}>{r.file}</span>
+                            <span className="text-slate-400">({r.status})</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              )}
             ))}
           </tbody>
         </table>

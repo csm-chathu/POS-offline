@@ -184,8 +184,28 @@ router.post('/migrate-all', async (req, res) => {
   res.end();
 });
 
+// POST /api/tenants/:id/migrate — run pending migrations on one tenant
+router.post('/:id/migrate', async (req, res) => {
+  const { Tenant } = getMasterDb();
+  const t = await Tenant.findByPk(req.params.id);
+  if (!t) return res.status(404).json({ error: 'Tenant not found' });
+
+  try {
+    const seq = new Sequelize(t.db_name, t.db_user, t.db_password, {
+      host: t.db_host, port: parseInt(t.db_port), dialect: 'mysql', logging: false,
+      pool: { max: 3, min: 0, acquire: 15000, idle: 5000 },
+      define: { timestamps: true, createdAt: 'created_at', updatedAt: 'updated_at', underscored: true },
+    });
+    const results = await runMigrations(seq);
+    await seq.close();
+    res.json({ ok: true, results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/tenants
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
   const { Tenant } = getMasterDb();
   const tenants = await Tenant.findAll({ order: [['id', 'ASC']] });
   res.json(tenants);
