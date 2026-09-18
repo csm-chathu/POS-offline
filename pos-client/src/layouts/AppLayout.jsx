@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Outlet, NavLink, useNavigate, useLocation, useNavigation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { logout, setCredentials, selectCurrentUser, selectRole, selectToken, selectFeatures } from '../features/auth/authSlice';
+import { logout, setCredentials, selectCurrentUser, selectRole, selectToken, selectFeatures, selectAllFeatures } from '../features/auth/authSlice';
 import { useMeQuery } from '../features/auth/authApi';
 import { useLocale } from '../contexts/LocaleContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -16,6 +17,7 @@ import SyncBlocker from '../components/SyncBlocker';
 import DailyConnectionGate from '../components/DailyConnectionGate';
 import { api } from '../app/baseApi';
 import { getApiUrl } from '../config/runtimeConfig';
+import { useGetFeaturesQuery } from '../features/roles/rolesApi';
 
 const settingsApi = api.injectEndpoints({
   endpoints: b => ({
@@ -65,7 +67,8 @@ const PAGE_TITLE_KEYS = {
   '/categories':       'page.categories',
   '/users':            'page.users',
   '/settings':         'page.settings',
-  '/admin/data-import': 'Data Import',
+  '/admin/data-import':      'Data Import',
+  '/admin/provision-tenant': 'Provision Tenant',
   '/reports':          'page.reports',
 };
 
@@ -75,13 +78,21 @@ export default function AppLayout() {
   const dispatch  = useDispatch();
   const navigate  = useNavigate();
   const location  = useLocation();
-  const user      = useSelector(selectCurrentUser);
-  const role      = useSelector(selectRole);
-  const features  = useSelector(selectFeatures); // null = admin (all access)
-  const isManager = role === 'admin' || role === 'manager';
-  const canSee    = key => features === null || features.includes(key);
-  const { t }     = useLocale();
-  const token     = useSelector(selectToken);
+  const user           = useSelector(selectCurrentUser);
+  const role           = useSelector(selectRole);
+  const token          = useSelector(selectToken);
+  const features       = useSelector(selectFeatures);    // null = admin (all access)
+  const storedFeatures = useSelector(selectAllFeatures);
+  const isAdmin        = role === 'admin';
+  const isManager      = isAdmin || role === 'manager';
+  const canSee         = key => isAdmin || features === null || features.includes(key);
+
+  // Fallback: fetch features from API if store is empty (e.g. old cached session)
+  const { data: fetchedFeatures } = useGetFeaturesQuery(undefined, {
+    skip: storedFeatures.length > 0 || !token,
+  });
+  const allFeatures = storedFeatures.length > 0 ? storedFeatures : (fetchedFeatures || []);
+  const { t } = useLocale();
 
   // Refresh user features from server on every app load
   const { data: meData } = useMeQuery(undefined, { skip: !token });
@@ -105,6 +116,7 @@ export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem('sidebar_collapsed') === 'true'
   );
+  const [sidebarHover, setSidebarHover] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [routing, setRouting] = useState(false);
   const [shopInfo, setShopInfo] = useState({ shop_name: '', shop_logo: '' });
@@ -213,37 +225,42 @@ export default function AppLayout() {
   const hideHeader  = isPOS || /^\/sales\/\d+$/.test(location.pathname);
 
   // On mobile drawer, always show full labels regardless of collapsed state
-  const displayCollapsed = collapsed && !mobileOpen;
+  // Also expand visually when hovering the collapsed sidebar
+  const displayCollapsed = collapsed && !mobileOpen && !sidebarHover;
 
   const pageTitleKey = Object.entries(PAGE_TITLE_KEYS).find(([path]) =>
     location.pathname === path || location.pathname.startsWith(path + '/')
   )?.[1];
   const pageTitle = pageTitleKey ? t(pageTitleKey) : 'LMUC POS';
 
-  // `offlineOk: false` marks pages that need a live server connection and
-  // have no offline fallback — they get greyed out / non-clickable while
-  // offline instead of navigating to a broken/empty page.
-  const mainNav = [
-    { to: '/dashboard',    label: t('nav.dashboard'),   icon: Icons.dashboard, offlineOk: false, feature: 'dashboard' },
-    { to: '/sales/create', label: t('nav.new_sale'),    icon: Icons.pos,       highlight: true, offlineOk: true,  feature: 'new_sale' },
-    { to: '/sales',        label: t('nav.sales'),       icon: Icons.sales,     offlineOk: true,  feature: 'sales' },
-    { to: '/products',        label: t('nav.products'),     icon: Icons.products, offlineOk: false, feature: 'products', end: true },
-    { to: '/products/intake', label: t('nav.stock_intake'), icon: Icons.intake,   offlineOk: false, feature: 'stock_intake' },
-    { to: '/purchases',    label: t('nav.purchases'),   icon: Icons.purchases, offlineOk: false, feature: 'purchases' },
-    { to: '/customers',    label: t('nav.customers'),   icon: Icons.customers, offlineOk: false, feature: 'customers' },
-    { to: '/invoices',     label: 'Day End',            icon: Icons.sales,     offlineOk: false, feature: 'invoices' },
-    { to: '/credit',       label: t('nav.credit_book'), icon: Icons.credit,    offlineOk: false, feature: 'credit' },
-    { to: '/suppliers',    label: t('nav.suppliers'),   icon: Icons.suppliers, offlineOk: false, feature: 'suppliers' },
-    { to: '/categories',   label: t('nav.categories'),  icon: Icons.categories,offlineOk: false, feature: 'categories' },
-  ].filter(n => canSee(n.feature));
+  // Items that only admin can see regardless of feature assignment
+  const ADMIN_ONLY = new Set(['data_import', 'role_permissions']);
+  // Items that work offline
+  const OFFLINE_OK = new Set(['new_sale', 'sales']);
+  // Items that get the POS highlight badge
+  const HIGHLIGHT  = new Set(['new_sale']);
+  // Items where NavLink `end` prop is needed to avoid matching sub-routes as active
+  const NAV_END    = new Set(['products', 'sales', 'dashboard', 'settings', 'invoices']);
 
-  const mgmtNav = [
-    { to: '/reports',       label: t('nav.reports'),   icon: Icons.reports,  offlineOk: false, feature: 'reports' },
-    { to: '/users',         label: t('nav.users'),     icon: Icons.users,    offlineOk: false, feature: 'users' },
-    { to: '/settings',      label: t('nav.settings'),  icon: Icons.settings, offlineOk: false, feature: 'settings' },
-    { to: '/admin/data-import', label: 'Data Import',     icon: Icons.upload, offlineOk: false, feature: 'data_import',      adminOnly: true },
-    { to: '/settings/roles',   label: 'Role Permissions', icon: Icons.users,  offlineOk: false, feature: 'role_permissions', adminOnly: true },
-  ].filter(n => canSee(n.feature) && (!n.adminOnly || role === 'admin'));
+  function featureToNav(f) {
+    return {
+      to:        f.path,
+      label:     f.label,
+      icon:      Icons[f.icon] || Icons.dashboard,
+      feature:   f.key,
+      offlineOk: f.offline_ok || OFFLINE_OK.has(f.key),
+      highlight:  HIGHLIGHT.has(f.key),
+      end:        NAV_END.has(f.key),
+    };
+  }
+
+  const mainNav = allFeatures
+    .filter(f => f.group === 'main' && canSee(f.key))
+    .map(featureToNav);
+
+  const mgmtNav = allFeatures
+    .filter(f => f.group === 'mgmt' && canSee(f.key) && (!ADMIN_ONLY.has(f.key) || role === 'admin'))
+    .map(featureToNav);
 
   function toggleCollapse() {
     setCollapsed(c => {
@@ -298,12 +315,15 @@ export default function AppLayout() {
       )}
 
       {/* ── Sidebar ────────────────────────────────────────────────────────── */}
-      <aside className={`print:hidden flex flex-col shrink-0 select-none transition-all duration-300 overflow-hidden
-        fixed inset-y-0 left-0 z-[999] w-64
-        ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:static md:translate-x-0 md:z-auto md:inset-y-auto md:left-auto
-        ${collapsed ? 'md:w-[62px]' : 'md:w-56'}
-        border-r border-[#2a2a2a]`} style={{ backgroundColor: '#141414' }}>
+      <aside
+        onMouseEnter={() => collapsed && setSidebarHover(true)}
+        onMouseLeave={() => setSidebarHover(false)}
+        className={`print:hidden flex flex-col shrink-0 select-none transition-all duration-300 overflow-hidden
+          fixed inset-y-0 left-0 z-[999] w-64
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:static md:translate-x-0 md:z-auto md:inset-y-auto md:left-auto
+          ${collapsed ? 'md:w-[62px]' : 'md:w-56'}
+          border-r border-[#2a2a2a]`} style={{ backgroundColor: '#141414' }}>
 
         {/* Brand / Logo */}
         <div className={`shrink-0 flex items-center transition-all duration-300
@@ -391,6 +411,17 @@ export default function AppLayout() {
               })}
             </>
           )}
+          {/* Provision Tenant — super-admin only */}
+          {isAdmin && (
+            <NavLink to="/admin/provision-tenant"
+              title={displayCollapsed ? 'Provision Tenant' : undefined}
+              onClick={() => { setMobileOpen(false); expandSidebar(); }}
+              className={({ isActive }) => navCls(isActive)}
+            >
+              <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m-6 8a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4"/></svg>
+              {!displayCollapsed && <span className="flex-1 truncate">Provision Tenant</span>}
+            </NavLink>
+          )}
         </nav>
 
         {/* Bottom: collapse toggle + logout */}
@@ -412,6 +443,99 @@ export default function AppLayout() {
           </button>
         </div>
       </aside>
+
+      {/* ── Hover drawer (portal — escapes all stacking contexts) ─────────── */}
+      {collapsed && createPortal(
+        <div
+          onMouseEnter={() => setSidebarHover(true)}
+          onMouseLeave={() => setSidebarHover(false)}
+          className="fixed inset-y-0 left-0 w-56 flex flex-col select-none border-r border-[#2a2a2a] shadow-2xl shadow-black/70 z-[99999]"
+          style={{
+            backgroundColor: '#141414',
+            transform: sidebarHover ? 'translateX(0)' : 'translateX(-100%)',
+            transition: 'transform 220ms cubic-bezier(0.4,0,0.2,1)',
+            pointerEvents: sidebarHover ? 'auto' : 'none',
+          }}>
+          {/* Brand */}
+          <div className="shrink-0 flex items-center px-4 py-3 gap-2.5 border-b border-[#2a2a2a]">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm shrink-0 overflow-hidden border-2 bg-slate-700 border-[#2a2a2a] text-white">
+              {shopInfo.shop_logo
+                ? <img src={shopInfo.shop_logo} alt="logo" className="w-full h-full object-cover" />
+                : <span>{(shopInfo.shop_name || 'L')[0].toUpperCase()}</span>}
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-sm leading-tight truncate text-white">{shopInfo.shop_name || 'LMUC POS'}</p>
+              <p className="text-xs text-slate-400">Point of Sale</p>
+            </div>
+          </div>
+          {/* Nav */}
+          <nav className="flex-1 overflow-y-auto py-3 space-y-0.5 px-2">
+            {mainNav.map(({ to, label, icon, highlight, offlineOk, end: endProp }) => {
+              const locked = !isOnline && !offlineOk;
+              if (locked) return (
+                <div key={to} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap cursor-not-allowed opacity-40 text-white/40">
+                  {icon}<span className="flex-1 truncate">{label}</span>
+                </div>
+              );
+              return (
+                <NavLink key={to} to={to}
+                  end={endProp || to === '/sales' || to === '/dashboard' || to === '/settings' || to === '/invoices'}
+                  onClick={() => setSidebarHover(false)}
+                  className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
+                    ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
+                  {icon}<span className="flex-1 truncate">{label}</span>
+                  {highlight && <span className="text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded-md">POS</span>}
+                </NavLink>
+              );
+            })}
+            {mgmtNav.length > 0 && (
+              <>
+                <div className="px-3 pt-4 pb-1.5">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">{t('nav.management')}</p>
+                </div>
+                {mgmtNav.map(({ to, label, icon, offlineOk }) => {
+                  const locked = !isOnline && !offlineOk;
+                  if (locked) return (
+                    <div key={to} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-not-allowed opacity-40 text-white/40">
+                      {icon}<span className="flex-1 truncate">{label}</span>
+                    </div>
+                  );
+                  return (
+                    <NavLink key={to} to={to} end={to === '/settings'}
+                      onClick={() => setSidebarHover(false)}
+                      className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
+                        ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
+                      {icon}<span className="flex-1 truncate">{label}</span>
+                    </NavLink>
+                  );
+                })}
+              </>
+            )}
+            {isAdmin && (
+              <NavLink to="/admin/provision-tenant" onClick={() => setSidebarHover(false)}
+                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
+                  ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
+                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m-6 8a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4"/></svg>
+                <span className="flex-1 truncate">Provision Tenant</span>
+              </NavLink>
+            )}
+          </nav>
+          {/* Bottom */}
+          <div className="shrink-0 py-3 space-y-1 border-t border-[#2a2a2a] px-3">
+            <button onClick={toggleCollapse}
+              className="hidden md:flex items-center gap-2 px-3 py-2 w-full rounded-xl transition-all text-slate-400 hover:text-white hover:bg-white/10">
+              {Icons.chevronsLeft}
+              <span className="text-sm font-medium">{t('btn.collapse')}</span>
+            </button>
+            <button onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 w-full rounded-xl transition-all text-slate-400 hover:text-white hover:bg-red-600/20">
+              {Icons.logout}
+              <span className="text-sm font-medium">{t('btn.logout')}</span>
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* ── Main area ──────────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

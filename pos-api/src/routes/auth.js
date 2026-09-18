@@ -3,6 +3,10 @@ const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const auth    = require('../middleware/auth');
 
+async function getAllFeatures(Feature) {
+  return Feature.findAll({ order: [['group', 'ASC'], ['sort_order', 'ASC'], ['id', 'ASC']] });
+}
+
 async function getRoleFeatures(Role, Feature, roleId) {
   if (!roleId) return null;
   const r = await Role.findByPk(roleId, {
@@ -47,7 +51,10 @@ router.post('/login', async (req, res) => {
 
   const roleObj  = user.Roles?.[0];
   const roleName = roleObj?.name ?? 'cashier';
-  const features = await getEffectiveFeatures(req.models, user.id, roleObj, roleName);
+  const [features, allFeatures] = await Promise.all([
+    getEffectiveFeatures(req.models, user.id, roleObj, roleName),
+    getAllFeatures(Feature),
+  ]);
 
   const token = jwt.sign(
     { userId: user.id, email: user.email, role: roleName, tenant: req.tenant },
@@ -58,6 +65,7 @@ router.post('/login', async (req, res) => {
   res.json({
     token,
     user: { id: user.id, name: user.name, email: user.email, role: roleName, features },
+    allFeatures,
   });
 });
 
@@ -74,11 +82,15 @@ router.get('/me', auth, async (req, res) => {
   const appSettings = Object.fromEntries(settings.map(s => [s.key, s.value]));
   const roleObj  = userWithRole?.Roles?.[0];
   const roleName = roleObj?.name ?? req.user.role;
-  const features = await getEffectiveFeatures(req.models, req.user.id, roleObj, roleName);
+  const [features, allFeatures] = await Promise.all([
+    getEffectiveFeatures(req.models, req.user.id, roleObj, roleName),
+    getAllFeatures(Feature),
+  ]);
 
   res.json({
     user: { id: req.user.id, name: req.user.name, email: req.user.email, role: roleName, features },
     appSettings,
+    allFeatures,
   });
 });
 

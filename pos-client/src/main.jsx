@@ -7,6 +7,7 @@ import { router } from './router/index.jsx';
 import { LocaleProvider } from './contexts/LocaleContext';
 import { ConnectivityProvider } from './contexts/ConnectivityContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import UpdateBanner from './components/UpdateBanner';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -16,6 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <LocaleProvider>
           <ConnectivityProvider>
             <RouterProvider router={router} />
+            <UpdateBanner />
           </ConnectivityProvider>
         </LocaleProvider>
       </ThemeProvider>

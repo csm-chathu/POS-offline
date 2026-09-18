@@ -180,6 +180,8 @@ function getModels(sequelize) {
     path:       { type: DataTypes.STRING(191), allowNull: true },
     group:      { type: DataTypes.STRING(50), allowNull: true },
     sort_order: { type: DataTypes.INTEGER, defaultValue: 0 },
+    icon:       { type: DataTypes.STRING(32), allowNull: true },
+    offline_ok: { type: DataTypes.BOOLEAN, defaultValue: false },
   }, { tableName: 'features', timestamps: false });
 
   // ── Associations ────────────────────────────────────────────────────────────

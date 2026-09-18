@@ -18,4 +18,10 @@ module.exports = {
     runAfterFinish: true,
     perMachine: false,
   },
+  publish: {
+    provider: 'github',
+    owner: 'csm-chathuranga',
+    repo: 'POS',
+    private: true,
+  },
 };

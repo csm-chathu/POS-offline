@@ -546,6 +546,39 @@ ipcMain.handle('printers:open-dialog', async () => {
   }
 });
 
+// ── Auto-updater ──────────────────────────────────────────────────────────────
+
+const { autoUpdater } = require('electron-updater');
+
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+
+autoUpdater.on('update-available', (info) => {
+  devLog('log', `[updater] update available: ${info.version}`);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update:available', { version: info.version });
+  }
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  devLog('log', `[updater] update downloaded: ${info.version}`);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update:downloaded', { version: info.version });
+  }
+});
+
+autoUpdater.on('error', (err) => {
+  devLog('error', `[updater] ${err.message}`);
+});
+
+ipcMain.handle('update:install', () => {
+  autoUpdater.quitAndInstall(false, true);
+});
+
+ipcMain.handle('update:check', () => {
+  if (app.isPackaged) autoUpdater.checkForUpdates().catch(() => {});
+});
+
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {
@@ -557,6 +590,11 @@ app.whenReady().then(() => {
     splashOpen = false;
     splash.close();
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show();
+
+    // Check for updates 10 s after launch so splash doesn't interfere
+    if (app.isPackaged) {
+      setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 10_000);
+    }
   }, 3000);
 
   // Ctrl+Shift+P → printer settings overlay

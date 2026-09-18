@@ -1,0 +1,26 @@
+name: Release Desktop App
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Electron deps
+        working-directory: Electron
+        run: npm install
+
+      - name: Build & publish
+        working-directory: Electron
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --config electron-builder.config.js --win nsis --publish always

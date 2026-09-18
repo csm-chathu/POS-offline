@@ -30,4 +30,11 @@ function getTenantDb(tenant, host) {
   return connectionCache[host];
 }
 
-module.exports = { getTenantDb };
+function evictTenantDb(host) {
+  if (connectionCache[host]) {
+    try { connectionCache[host].sequelize.close(); } catch {}
+    delete connectionCache[host];
+  }
+}
+
+module.exports = { getTenantDb, evictTenantDb };

@@ -14,6 +14,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openPrinterDialog: () => ipcRenderer.invoke('printers:open-dialog'),
   openCashDrawer:    (printerTypeOrName) => ipcRenderer.invoke('printers:open-drawer', printerTypeOrName),
   openCashDrawerCom: (port) => ipcRenderer.invoke('printers:open-drawer-com', port),
+  // Auto-update
+  onUpdateAvailable: (cb) => ipcRenderer.on('update:available', (_e, info) => cb(info)),
+  onUpdateDownloaded: (cb) => ipcRenderer.on('update:downloaded', (_e, info) => cb(info)),
+  installUpdate:     () => ipcRenderer.invoke('update:install'),
+  checkForUpdates:   () => ipcRenderer.invoke('update:check'),
+  removeUpdateListeners: () => {
+    ipcRenderer.removeAllListeners('update:available');
+    ipcRenderer.removeAllListeners('update:downloaded');
+  },
 });
 
 // Intercept window.print() → silent Electron print (no dialog)

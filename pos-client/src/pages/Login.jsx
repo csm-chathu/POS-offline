@@ -54,6 +54,7 @@ const DEMO = [
 export default function Login() {
   const [form, setForm]       = useState({ email: '', password: '' });
   const [error, setError]     = useState('');
+  const [serverError, setServerError] = useState('');
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [appInfo, setAppInfo] = useState(() => {
     const cached = loadOfflineCreds();
@@ -75,7 +76,15 @@ export default function Login() {
 
   useEffect(() => {
     fetch(`${API}/api/settings/public`)
-      .then(r => r.ok ? r.json() : null)
+      .then(async r => {
+        if (!r.ok) {
+          const body = await r.json().catch(() => ({}));
+          setServerError(body.error || `Server error ${r.status}`);
+          return null;
+        }
+        setServerError('');
+        return r.json();
+      })
       .then(d => {
         if (!d) return;
         setAppInfo(d);
@@ -152,6 +161,23 @@ export default function Login() {
 
       {/* Card */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
+        {serverError && (
+          <div className="mb-4 px-3 py-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+            <div className="flex items-start gap-2.5 mb-2">
+              <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+              <div>
+                <p className="font-bold text-sm text-red-800 mb-0.5">Service Unavailable</p>
+                <p className="text-red-600">Please contact your system administrator.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-1.5 pt-2 border-t border-red-200">
+              <span className="text-red-500 shrink-0">Error code:</span>
+              <span className="font-mono text-red-700 bg-red-100 px-1.5 py-0.5 rounded select-all break-all">
+                {btoa(serverError).slice(0, 12).toUpperCase()}
+              </span>
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-slate-800">Sign In</h2>
           {isOffline ? (
@@ -179,9 +205,9 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email / Username</label>
             <input
-              type="email" required autoFocus
+              type="text" required autoFocus autoComplete="username"
               value={form.email}
               onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
               onBlur={e => { if (e.target.value.trim()) passwordRef.current?.focus(); }}

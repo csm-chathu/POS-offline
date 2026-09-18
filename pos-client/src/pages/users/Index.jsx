@@ -4,11 +4,11 @@ import {
   useUpdateUserMutation, useDeleteUserMutation,
   useGetAllFeaturesQuery, useGetUserFeaturesQuery, useSetUserFeaturesMutation,
 } from '../../features/users/usersApi';
+import { useGetRolesQuery } from '../../features/roles/rolesApi';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser, selectRole } from '../../features/auth/authSlice';
 import { useLocale } from '../../contexts/LocaleContext';
 
-const ROLES = ['admin', 'manager', 'cashier', 'custom'];
 const empty = { name: '', email: '', password: '', role: 'cashier' };
 
 // ── Feature assignment modal ────────────────────────────────────────────────
@@ -137,6 +137,8 @@ export default function UsersIndex() {
   const [featureUser, setFeatureUser] = useState(null);
 
   const { data: users = [], isLoading } = useGetUsersQuery();
+  const { data: rolesData = [] }        = useGetRolesQuery();
+  const roleNames = rolesData.map(r => r.name);
   const [create, { isLoading: creating }] = useCreateUserMutation();
   const [update, { isLoading: updating }] = useUpdateUserMutation();
   const [del] = useDeleteUserMutation();
@@ -264,7 +266,7 @@ export default function UsersIndex() {
             </div>
             <form onSubmit={handleSave} className="space-y-3">
               {err && <p className="text-sm text-red-600">{err}</p>}
-              {[[`${t('usr.name')} *`, 'name', 'text', { required: true }], [`${t('usr.email')} *`, 'email', 'email', { required: true }]].map(([label, field, type, props = {}]) => (
+              {[[`${t('usr.name')} *`, 'name', 'text', { required: true }], [`${t('usr.email')} / Username *`, 'email', 'text', { required: true }]].map(([label, field, type, props = {}]) => (
                 <div key={field}>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">{label}</label>
                   <input type={type} value={form[field]} onChange={set(field)}
@@ -281,7 +283,9 @@ export default function UsersIndex() {
                 <label className="block text-xs font-semibold text-slate-600 mb-1">{t('usr.role')}</label>
                 <select value={form.role} onChange={set('role')}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                  {ROLES.map(r => <option key={r} value={r}>{t(`usr.${r}`)}</option>)}
+                  {roleNames.map(r => (
+                    <option key={r} value={r} className="capitalize">{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                  ))}
                 </select>
               </div>
               <div className="flex justify-end gap-2 pt-2">

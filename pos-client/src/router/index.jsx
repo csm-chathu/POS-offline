@@ -1,6 +1,6 @@
 import { createBrowserRouter, createHashRouter, Navigate, Outlet } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { selectToken, selectRole } from '../features/auth/authSlice';
+import { selectToken, selectRole, selectFeatures } from '../features/auth/authSlice';
 import AppLayout      from '../layouts/AppLayout';
 import CashierLayout  from '../layouts/CashierLayout';
 import GuestLayout    from '../layouts/GuestLayout';
@@ -30,7 +30,8 @@ import Reports         from '../pages/reports/Index';
 import UsersIndex     from '../pages/users/Index';
 import SuppliersIndex   from '../pages/suppliers/Index';
 import CategoriesIndex  from '../pages/categories/Index';
-import ImportDataPage   from '../pages/admin/ImportData';
+import ImportDataPage    from '../pages/admin/ImportData';
+import ProvisionTenant  from '../pages/admin/ProvisionTenant';
 import Settings         from '../pages/Settings';
 import RolesPage        from '../pages/settings/Roles';
 import InvoicesIndex    from '../pages/invoices/Index';
@@ -47,14 +48,28 @@ function POSRoute() {
   return iface === '3' ? <SalesCreate3 /> : iface === '2' ? <SalesCreate2 /> : <SalesCreate />;
 }
 
+const MGMT_FEATURES = ['reports', 'users', 'settings', 'data_import', 'role_permissions', 'invoices'];
+
 function RoleLayout() {
   const role = useSelector(selectRole);
   return role === 'cashier' ? <CashierLayout /> : <AppLayout />;
 }
 
+// Allow access if admin OR if the user has at least one management feature
 function AdminRoute() {
-  const role = useSelector(selectRole);
-  return (role === 'admin' || role === 'manager' || role === 'custom') ? <Outlet /> : <Navigate to="/dashboard" replace />;
+  const role     = useSelector(selectRole);
+  const features = useSelector(selectFeatures);
+  if (role === 'admin') return <Outlet />;
+  const hasMgmt = features === null || MGMT_FEATURES.some(f => features.includes(f));
+  return hasMgmt ? <Outlet /> : <Navigate to="/dashboard" replace />;
+}
+
+// Guard a single page by its feature key
+function FeatureRoute({ feature }) {
+  const role     = useSelector(selectRole);
+  const features = useSelector(selectFeatures);
+  const allowed  = role === 'admin' || features === null || features.includes(feature);
+  return allowed ? <Outlet /> : <Navigate to="/dashboard" replace />;
 }
 
 function AdminOnlyRoute() {
@@ -102,17 +117,22 @@ export const router = createAppRouter([
         {
           element: <AdminRoute />,
           children: [
-            { path: 'reports',  element: <Reports /> },
-            { path: 'users',    element: <UsersIndex /> },
-            { path: 'settings', element: <Settings /> },
-            { path: 'settings/roles', element: <RolesPage /> },
-            { path: 'invoices', element: <InvoicesIndex /> },
-            { path: 'invoices/create', element: <InvoiceCreate /> },
-            { path: 'invoices/:id', element: <InvoiceShow /> },
+            { element: <FeatureRoute feature="reports" />,          children: [{ path: 'reports', element: <Reports /> }] },
+            { element: <FeatureRoute feature="users" />,            children: [{ path: 'users',   element: <UsersIndex /> }] },
+            { element: <FeatureRoute feature="settings" />,         children: [
+              { path: 'settings',       element: <Settings /> },
+              { path: 'settings/roles', element: <RolesPage /> },
+            ]},
+            { element: <FeatureRoute feature="invoices" />,         children: [
+              { path: 'invoices',        element: <InvoicesIndex /> },
+              { path: 'invoices/create', element: <InvoiceCreate /> },
+              { path: 'invoices/:id',    element: <InvoiceShow /> },
+            ]},
             {
               element: <AdminOnlyRoute />,
               children: [
-                { path: 'admin/data-import', element: <ImportDataPage /> },
+                { path: 'admin/data-import',      element: <ImportDataPage /> },
+                { path: 'admin/provision-tenant', element: <ProvisionTenant /> },
               ],
             },
           ],

@@ -40,6 +40,7 @@ app.use('/api/roles',     require('./routes/roles'));
 app.use('/api/reports',   require('./routes/reports'));
 app.use('/api/imagekit',       require('./routes/imagekit'));
 app.use('/api/notifications',  require('./routes/notifications'));
+app.use('/api/tenants',        require('./routes/tenants'));
 
 // Wrap all async route handlers so thrown errors flow to the error handler
 function wrapAsync(router) {
@@ -65,7 +66,24 @@ function wrapAsync(router) {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('[Error]', err?.message || err);
-  const status = err.status || (err.name === 'SequelizeAccessDeniedError' ? 503 : 500);
+
+  const DB_ERRORS = new Set([
+    'SequelizeConnectionRefusedError',
+    'SequelizeAccessDeniedError',
+    'SequelizeConnectionError',
+    'SequelizeHostNotFoundError',
+    'SequelizeHostNotReachableError',
+    'SequelizeInvalidConnectionError',
+  ]);
+
+  if (DB_ERRORS.has(err.name) && req.tenant) {
+    // Evict both caches so the next request tries fresh
+    const { bustCache } = require('./config/tenantCache');
+    bustCache(req.tenant);
+    return res.status(503).json({ error: `Cannot connect to tenant database for "${req.tenant}". Check the DB mapping.` });
+  }
+
+  const status = err.status || 500;
   res.status(status).json({ error: err.message || 'Internal server error' });
 });
 
