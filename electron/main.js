@@ -552,6 +552,20 @@ const { autoUpdater } = require('electron-updater');
 
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.logger = {
+  info:  (...a) => { console.log('[updater]',  ...a); devLog('log',   '[updater] ' + a.join(' ')); },
+  warn:  (...a) => { console.warn('[updater]', ...a); devLog('warn',  '[updater] ' + a.join(' ')); },
+  error: (...a) => { console.error('[updater]',...a); devLog('error', '[updater] ' + a.join(' ')); },
+  debug: () => {},
+};
+
+autoUpdater.on('checking-for-update', () => {
+  devLog('log', `[updater] checking… current version: ${app.getVersion()}`);
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  devLog('log', `[updater] up to date (latest: ${info.version})`);
+});
 
 autoUpdater.on('update-available', (info) => {
   devLog('log', `[updater] update available: ${info.version}`);
@@ -568,7 +582,7 @@ autoUpdater.on('update-downloaded', (info) => {
 });
 
 autoUpdater.on('error', (err) => {
-  devLog('error', `[updater] ${err.message}`);
+  devLog('error', `[updater] error: ${err.message}`);
 });
 
 ipcMain.handle('update:install', () => {
@@ -576,7 +590,7 @@ ipcMain.handle('update:install', () => {
 });
 
 ipcMain.handle('update:check', () => {
-  if (app.isPackaged) autoUpdater.checkForUpdates().catch(() => {});
+  autoUpdater.checkForUpdates().catch(err => devLog('error', '[updater] manual check failed: ' + err.message));
 });
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
@@ -591,9 +605,12 @@ app.whenReady().then(() => {
     splash.close();
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show();
 
-    // Check for updates 10 s after launch so splash doesn't interfere
+    // Check for updates 10 s after launch (only in packaged builds)
     if (app.isPackaged) {
-      setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 10_000);
+      setTimeout(() => {
+        devLog('log', `[updater] starting check, app version: ${app.getVersion()}`);
+        autoUpdater.checkForUpdates().catch(err => devLog('error', '[updater] check failed: ' + err.message));
+      }, 10_000);
     }
   }, 3000);
 
