@@ -5,7 +5,7 @@ export default function UpdateBanner() {
   const [version, setVersion] = useState('');
 
   useEffect(() => {
-    if (!window.electronAPI) return;
+    if (!window.electronAPI?.onUpdateAvailable) return;
 
     window.electronAPI.onUpdateAvailable((info) => {
       setVersion(info.version);
