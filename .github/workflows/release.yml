@@ -40,6 +40,10 @@ jobs:
         working-directory: electron
         run: npm install
 
+      - name: Rebuild native modules for Electron ABI
+        working-directory: electron
+        run: npx @electron/rebuild --module-dir ../pos-api
+
       - name: Build & publish offline EXE
         working-directory: electron
         env:
