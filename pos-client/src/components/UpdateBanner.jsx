@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export default function UpdateBanner() {
-  const [state, setState] = useState(null); // null | 'downloading' | 'downloaded'
+  const [state, setState] = useState(null); // null | 'available' | 'downloading' | 'downloaded'
   const [version, setVersion] = useState('');
 
   useEffect(() => {
@@ -9,7 +9,7 @@ export default function UpdateBanner() {
 
     window.electronAPI.onUpdateAvailable((info) => {
       setVersion(info.version);
-      setState('downloading');
+      setState('available');
     });
 
     window.electronAPI.onUpdateDownloaded((info) => {
@@ -22,6 +22,11 @@ export default function UpdateBanner() {
 
   if (!state) return null;
 
+  function startDownload() {
+    setState('downloading');
+    window.electronAPI.downloadUpdate?.();
+  }
+
   return (
     <div className="fixed bottom-4 right-4 z-50 max-w-sm w-full">
       <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-3 flex items-start gap-3">
@@ -33,10 +38,23 @@ export default function UpdateBanner() {
         </div>
 
         <div className="flex-1 min-w-0">
-          {state === 'downloading' && (
+          {state === 'available' && (
             <>
               <p className="text-sm font-semibold text-slate-800">Update available — v{version}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Downloading in the background…</p>
+              <p className="text-xs text-slate-500 mt-0.5">A new version is ready to download.</p>
+              <button
+                onClick={startDownload}
+                className="mt-2 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Download Update
+              </button>
+            </>
+          )}
+
+          {state === 'downloading' && (
+            <>
+              <p className="text-sm font-semibold text-slate-800">Downloading v{version}…</p>
+              <p className="text-xs text-slate-500 mt-0.5">Please wait while the update downloads.</p>
               <div className="mt-2 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full bg-blue-500 rounded-full animate-pulse w-2/3" />
               </div>
@@ -46,7 +64,7 @@ export default function UpdateBanner() {
           {state === 'downloaded' && (
             <>
               <p className="text-sm font-semibold text-slate-800">Update ready — v{version}</p>
-              <p className="text-xs text-slate-500 mt-0.5">Will install automatically when you close the app.</p>
+              <p className="text-xs text-slate-500 mt-0.5">Restart the app to apply the update.</p>
               <button
                 onClick={() => window.electronAPI.installUpdate()}
                 className="mt-2 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold hover:bg-green-700 transition-colors"
@@ -57,7 +75,7 @@ export default function UpdateBanner() {
           )}
         </div>
 
-        {state === 'downloaded' && (
+        {state !== 'downloading' && (
           <button
             onClick={() => setState(null)}
             className="text-slate-400 hover:text-slate-600 mt-0.5 shrink-0"

@@ -602,7 +602,7 @@ function spawnOfflineApi() {
 
 const { autoUpdater } = require('electron-updater');
 
-autoUpdater.autoDownload = true;
+autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.logger = {
   info:  (...a) => { console.log('[updater]',  ...a); devLog('log',   '[updater] ' + a.join(' ')); },
