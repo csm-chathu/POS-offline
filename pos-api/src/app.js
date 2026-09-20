@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express');
+const path    = require('path');
+const fs      = require('fs');
 
 // Prevent unhandled DB errors from crashing the process
 process.on('unhandledRejection', (err) => {
@@ -41,6 +43,7 @@ app.use('/api/reports',   require('./routes/reports'));
 app.use('/api/imagekit',       require('./routes/imagekit'));
 app.use('/api/notifications',  require('./routes/notifications'));
 app.use('/api/tenants',        require('./routes/tenants'));
+app.use('/api/scale',          require('./routes/scale'));
 
 // Wrap all async route handlers so thrown errors flow to the error handler
 function wrapAsync(router) {
@@ -87,5 +90,43 @@ app.use((err, req, res, next) => {
   res.status(status).json({ error: err.message || 'Internal server error' });
 });
 
+// ── Static file serving (offline mode) ───────────────────────────────────────
+const publicDir = path.join(__dirname, '../public');
+if (fs.existsSync(publicDir)) {
+  app.use(express.static(publicDir));
+  // Catch-all: serve React index.html for any non-API route
+  app.get(/^(?!\/api).*/, (req, res) => {
+    res.sendFile(path.join(publicDir, 'index.html'));
+  });
+}
+
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log(`POS API running on http://localhost:${PORT}`));
+
+async function startServer() {
+  // SQLite/offline mode — sync schema and seed default admin before accepting requests
+  if (process.env.DIALECT === 'sqlite') {
+    const { getTenantDb } = require('./config/db');
+    const { sequelize, models } = getTenantDb({}, 'local');
+    await sequelize.sync({ alter: true });
+    try {
+      const bcrypt = require('bcryptjs');
+      const { User, Role } = models;
+      const [role] = await Role.findOrCreate({ where: { name: 'admin' }, defaults: { name: 'admin' } });
+      const hash = await bcrypt.hash('admin123', 10);
+      const existing = await User.findOne({ where: { email: 'admin@pos.local' } });
+      if (!existing) {
+        const user = await User.create({ name: 'Admin', email: 'admin@pos.local', password: hash });
+        await sequelize.query(`INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (${user.id}, ${role.id})`);
+        console.log('[DB] Default admin created — email: admin@pos.local  password: admin123');
+      } else {
+        await existing.update({ password: hash });
+        await sequelize.query(`INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (${existing.id}, ${role.id})`);
+        console.log('[DB] Admin password reset — email: admin@pos.local  password: admin123');
+      }
+    } catch (e) { console.error('[DB seed error]', e.message); }
+  }
+
+  app.listen(PORT, () => console.log(`POS API running on http://localhost:${PORT}`));
+}
+
+startServer().catch(e => { console.error('[startup]', e.message); process.exit(1); });

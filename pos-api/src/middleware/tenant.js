@@ -22,6 +22,15 @@ async function lookupTenant(hostname) {
 }
 
 async function tenantMiddleware(req, res, next) {
+  // Offline/SQLite mode — skip master DB lookup entirely
+  if (process.env.DIALECT === 'sqlite') {
+    const { models, sequelize } = getTenantDb({}, 'local');
+    req.models = models;
+    req.db     = sequelize;
+    req.tenant = 'local';
+    return next();
+  }
+
   const host = req.hostname;
 
   try {

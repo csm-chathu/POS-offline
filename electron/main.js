@@ -1,6 +1,12 @@
 const { app, BrowserWindow, ipcMain, globalShortcut, dialog, nativeImage } = require('electron');
 const path = require('path');
 const fs   = require('fs');
+const net  = require('net');
+const { spawn } = require('child_process');
+
+const IS_OFFLINE_BUILD = !!require('./package.json').offline;
+
+let _apiProcess = null;
 
 app.commandLine.appendSwitch('high-dpi-support', '1');
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
@@ -546,6 +552,52 @@ ipcMain.handle('printers:open-dialog', async () => {
   }
 });
 
+// ── Offline API process ───────────────────────────────────────────────────────
+
+function waitForPort(port, timeoutMs = 30000) {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    function attempt() {
+      const sock = new net.Socket();
+      sock.setTimeout(500);
+      sock.on('connect', () => { sock.destroy(); resolve(); });
+      sock.on('error',   () => { sock.destroy(); retry(); });
+      sock.on('timeout', () => { sock.destroy(); retry(); });
+      sock.connect(port, '127.0.0.1');
+    }
+    function retry() {
+      if (Date.now() - start > timeoutMs) return reject(new Error('API did not start in time'));
+      setTimeout(attempt, 400);
+    }
+    attempt();
+  });
+}
+
+function spawnOfflineApi() {
+  const apiEntry = app.isPackaged
+    ? path.join(process.resourcesPath, 'pos-api', 'src', 'app.js')
+    : path.join(__dirname, '..', 'pos-api', 'src', 'app.js');
+
+  const dbPath = path.join(app.getPath('userData'), 'pos.db');
+
+  _apiProcess = spawn(process.execPath, [apiEntry], {
+    env: {
+      ...process.env,
+      ELECTRON_RUN_AS_NODE: '1',
+      DIALECT: 'sqlite',
+      PORT: '8000',
+      DB_PATH: dbPath,
+      JWT_SECRET: 'lumac_pos_offline_jwt_secret',
+      NODE_ENV: 'production',
+    },
+    stdio: 'pipe',
+  });
+
+  _apiProcess.stdout.on('data', d => console.log('[api]', d.toString().trim()));
+  _apiProcess.stderr.on('data', d => console.error('[api]', d.toString().trim()));
+  _apiProcess.on('exit', code => console.log('[api] exited with code', code));
+}
+
 // ── Auto-updater ──────────────────────────────────────────────────────────────
 
 const { autoUpdater } = require('electron-updater');
@@ -593,11 +645,97 @@ ipcMain.handle('update:check', () => {
   autoUpdater.checkForUpdates().catch(err => devLog('error', '[updater] manual check failed: ' + err.message));
 });
 
+// ── Scale (network TCP) ───────────────────────────────────────────────────────
+
+ipcMain.handle('scale:get-config', () => {
+  const config = readPrinterConfig();
+  return config.scale || { host: '', port: 8000 };
+});
+
+ipcMain.handle('scale:save-config', (event, scaleConfig) => {
+  const config  = readPrinterConfig();
+  config.scale  = scaleConfig;
+  _configCache  = config;
+  fs.writeFileSync(getConfigPath(), JSON.stringify(config, null, 2));
+  return { success: true };
+});
+
+ipcMain.handle('scale:check-connection', (event, host, port) => {
+  return new Promise((resolve) => {
+    if (!host || !port) return resolve({ connected: false, error: 'No host or port configured' });
+    const socket  = new net.Socket();
+    const timer   = setTimeout(() => {
+      socket.destroy();
+      resolve({ connected: false, error: 'Connection timed out' });
+    }, 3000);
+    socket.connect(parseInt(port, 10), host, () => {
+      clearTimeout(timer);
+      socket.destroy();
+      resolve({ connected: true });
+    });
+    socket.on('error', (err) => {
+      clearTimeout(timer);
+      resolve({ connected: false, error: err.message });
+    });
+  });
+});
+
+ipcMain.handle('scale:read-weight', (event, host, port) => {
+  return new Promise((resolve) => {
+    if (!host || !port) return resolve({ success: false, error: 'No host or port configured' });
+    const socket = new net.Socket();
+    let   buf    = '';
+    let   done   = false;
+
+    function finish(result) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      socket.destroy();
+      resolve(result);
+    }
+
+    const timer = setTimeout(() => {
+      finish({ success: false, error: 'Read timed out' });
+    }, 5000);
+
+    socket.connect(parseInt(port, 10), host, () => {
+      socket.write(Buffer.from([0x05])); // ENQ — common weight-request command
+    });
+
+    socket.on('data', (data) => {
+      buf += data.toString('ascii');
+      const m = buf.match(/[+\-]?\s*(\d+\.?\d*)\s*(kg|g|lb)/i);
+      if (m) finish({ success: true, weight: parseFloat(m[1]), unit: m[2].toLowerCase(), raw: buf.trim() });
+    });
+
+    socket.on('close', () => {
+      if (!done) finish(buf ? { success: true, raw: buf.trim() } : { success: false, error: 'No data received' });
+    });
+
+    socket.on('error', (err) => finish({ success: false, error: err.message }));
+  });
+});
+
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   splashOpen = true;
   const splash = createSplashWindow();
+
+  if (IS_OFFLINE_BUILD) {
+    // Start the bundled API, then wait for it to be ready before showing window
+    spawnOfflineApi();
+    try {
+      await waitForPort(8000);
+    } catch (e) {
+      console.error('[offline] API failed to start:', e.message);
+    }
+    // Override the URL to point at the local API
+    if (!_configCache) readPrinterConfig();
+    _configCache.app = { ...(_configCache.app || {}), url: 'http://localhost:8000' };
+  }
+
   createMainWindow();
 
   setTimeout(() => {
@@ -605,11 +743,12 @@ app.whenReady().then(() => {
     splash.close();
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show();
 
-    // Check for updates 10 s after launch (only in packaged builds)
+    // Check for updates 10 s after launch (packaged builds only)
+    // Offline builds use channel "offline" so they only update to other offline builds
     if (app.isPackaged) {
       setTimeout(() => {
         devLog('log', `[updater] starting check, app version: ${app.getVersion()}`);
-        autoUpdater.checkForUpdates().catch(err => devLog('error', '[updater] check failed: ' + err.message));
+        autoUpdater.checkForUpdates().catch(err => devLog('log', '[updater] no update check (offline or no internet): ' + err.message));
       }, 10_000);
     }
   }, 3000);
@@ -628,7 +767,10 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('will-quit', () => globalShortcut.unregisterAll());
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+  if (_apiProcess && !_apiProcess.killed) _apiProcess.kill();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

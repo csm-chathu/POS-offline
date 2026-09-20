@@ -1,4 +1,5 @@
 const { Sequelize } = require('sequelize');
+const path = require('path');
 const getModels = require('../models');
 
 // Per-tenant connection cache — one pool per subdomain
@@ -20,14 +21,30 @@ function createConnection(tenant) {
   });
 }
 
+function createSqliteConnection() {
+  const dbPath = process.env.DB_PATH || path.join(__dirname, '../../pos.db');
+  return new Sequelize({
+    dialect: 'sqlite',
+    storage: dbPath,
+    logging: false,
+    define: {
+      timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
+      underscored: true,
+    },
+  });
+}
+
 function getTenantDb(tenant, host) {
-  if (!connectionCache[host]) {
-    connectionCache[host] = {
-      sequelize: createConnection(tenant),
-    };
-    connectionCache[host].models = getModels(connectionCache[host].sequelize);
+  const key = process.env.DIALECT === 'sqlite' ? '__sqlite__' : host;
+  if (!connectionCache[key]) {
+    const sequelize = process.env.DIALECT === 'sqlite'
+      ? createSqliteConnection()
+      : createConnection(tenant);
+    connectionCache[key] = { sequelize, models: getModels(sequelize) };
   }
-  return connectionCache[host];
+  return connectionCache[key];
 }
 
 function evictTenantDb(host) {

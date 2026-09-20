@@ -8,7 +8,8 @@
     "scripts": {
         "start": "electron .",
         "dev": "electron .",
-        "dist": "electron-builder --config electron-builder.config.js --win nsis"
+        "dist": "electron-builder --config electron-builder.config.js --win nsis",
+        "dist:offline": "electron-builder --config electron-builder.offline.config.js --win nsis"
     },
     "dependencies": {
         "electron-updater": "^6.8.9"
