@@ -602,8 +602,8 @@ function spawnOfflineApi() {
 
 const { autoUpdater } = require('electron-updater');
 
-autoUpdater.autoDownload = false;
-autoUpdater.autoInstallOnAppQuit = false;
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.logger = {
   info:  (...a) => { console.log('[updater]',  ...a); devLog('log',   '[updater] ' + a.join(' ')); },
   warn:  (...a) => { console.warn('[updater]', ...a); devLog('warn',  '[updater] ' + a.join(' ')); },
@@ -628,6 +628,13 @@ autoUpdater.on('update-available', (info) => {
 
 autoUpdater.on('update-downloaded', (info) => {
   devLog('log', `[updater] update downloaded: ${info.version}`);
+  // Auto-backup DB before notifying renderer
+  const dbPath = path.join(app.getPath('userData'), 'pos.db');
+  if (fs.existsSync(dbPath)) {
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const backupPath = path.join(app.getPath('userData'), `pos-backup-${ts}.db`);
+    try { fs.copyFileSync(dbPath, backupPath); devLog('log', `[updater] DB backed up to ${backupPath}`); } catch (_) {}
+  }
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('update:downloaded', { version: info.version });
   }

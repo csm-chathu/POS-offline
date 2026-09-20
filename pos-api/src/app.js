@@ -144,11 +144,11 @@ async function startServer() {
       const existing = await User.findOne({ where: { email: 'admin@pos.local' } });
       if (!existing) {
         const user = await User.create({ name: 'Admin', email: 'admin@pos.local', password: hash });
-        await sequelize.query(`INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (${user.id}, ${role.id})`);
+        await sequelize.query(`INSERT OR IGNORE INTO user_role (user_id, role_id) VALUES (${user.id}, ${role.id})`);
         console.log('[DB] Default admin created — email: admin@pos.local  password: admin123');
       } else {
         await existing.update({ password: hash });
-        await sequelize.query(`INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (${existing.id}, ${role.id})`);
+        await sequelize.query(`INSERT OR IGNORE INTO user_role (user_id, role_id) VALUES (${existing.id}, ${role.id})`);
         console.log('[DB] Admin password reset — email: admin@pos.local  password: admin123');
       }
     } catch (e) { console.error('[DB seed error]', e.message); }
