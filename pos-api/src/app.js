@@ -187,30 +187,52 @@ async function startServer() {
 
     // Seed products and categories from bundled data.json (first install only)
     try {
-      const { Category, Product } = models;
+      const { Product } = models;
       const productCount = await Product.count();
       if (productCount === 0) {
         const seedFile = path.join(__dirname, '../seeds/data.json');
-        if (fs.existsSync(seedFile)) {
+        console.log('[DB] Seed file path:', seedFile);
+        if (!fs.existsSync(seedFile)) {
+          console.error('[DB] Seed file NOT found — products will not be seeded');
+        } else {
           console.log('[DB] First install detected — seeding products...');
           const { categories, products } = JSON.parse(fs.readFileSync(seedFile, 'utf8'));
 
-          // Insert categories preserving original IDs
-          const CHUNK = 200;
-          for (let i = 0; i < categories.length; i += CHUNK) {
-            await Category.bulkCreate(categories.slice(i, i + CHUNK), { ignoreDuplicates: true });
-          }
-          console.log(`[DB] ${categories.length} categories seeded`);
+          // Use raw SQL INSERT OR IGNORE to reliably preserve original IDs
+          const CHUNK = 500;
+          await sequelize.transaction(async (t) => {
+            // Seed categories
+            for (let i = 0; i < categories.length; i += CHUNK) {
+              const batch = categories.slice(i, i + CHUNK);
+              const placeholders = batch.map(() => '(?,?)').join(',');
+              const values = batch.flatMap(c => [c.id, c.name]);
+              await sequelize.query(
+                `INSERT OR IGNORE INTO categories (id, name) VALUES ${placeholders}`,
+                { replacements: values, transaction: t }
+              );
+            }
+            console.log(`[DB] ${categories.length} categories seeded`);
 
-          // Insert products in chunks to avoid memory pressure
-          for (let i = 0; i < products.length; i += CHUNK) {
-            await Product.bulkCreate(products.slice(i, i + CHUNK), { ignoreDuplicates: true });
-            if (i % 2000 === 0) console.log(`[DB] Products seeded: ${Math.min(i + CHUNK, products.length)}/${products.length}`);
-          }
-          console.log(`[DB] ${products.length} products seeded`);
+            // Seed products
+            const cols = 'id,category_id,name,name_si,barcode,sku,description,cost_price,selling_price,wholesale_price,promo_price,promo_start_date,promo_end_date,our_price,expiry_date,stock_qty,alert_qty,unit,active,is_fast_moving';
+            const colList = cols.split(',');
+            for (let i = 0; i < products.length; i += CHUNK) {
+              const batch = products.slice(i, i + CHUNK);
+              const placeholders = batch.map(() => `(${colList.map(() => '?').join(',')})`).join(',');
+              const values = batch.flatMap(p => colList.map(c => p[c] ?? null));
+              await sequelize.query(
+                `INSERT OR IGNORE INTO products (${cols}) VALUES ${placeholders}`,
+                { replacements: values, transaction: t }
+              );
+              console.log(`[DB] Products seeded: ${Math.min(i + CHUNK, products.length)}/${products.length}`);
+            }
+            console.log(`[DB] ${products.length} products seeded`);
+          });
         }
+      } else {
+        console.log(`[DB] Skipping product seed — ${productCount} products already exist`);
       }
-    } catch (e) { console.error('[DB product seed error]', e.message); }
+    } catch (e) { console.error('[DB product seed error]', e.message, e.stack); }
   }
 
   app.listen(PORT, () => console.log(`POS API running on http://localhost:${PORT}`));
