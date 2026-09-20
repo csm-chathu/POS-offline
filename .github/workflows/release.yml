@@ -18,13 +18,6 @@ jobs:
         with:
           node-version: 20
 
-      - name: Set version from tag
-        working-directory: electron
-        shell: pwsh
-        run: |
-          $version = "${{ github.ref_name }}".TrimStart('v')
-          npm version $version --no-git-tag-version --allow-same-version
-
       - name: Install pos-client deps and build
         working-directory: pos-client
         run: |
