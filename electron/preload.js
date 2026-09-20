@@ -21,6 +21,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkForUpdates:   () => ipcRenderer.invoke('update:check'),
   downloadUpdate:    () => ipcRenderer.invoke('update:download'),
   backupDb:          () => ipcRenderer.invoke('db:backup'),
+  reportSyncStatus:  () => {}, // no-op in offline mode
+  readApiLog:        () => ipcRenderer.invoke('api:read-log'),
   removeUpdateListeners: () => {
     ipcRenderer.removeAllListeners('update:available');
     ipcRenderer.removeAllListeners('update:downloaded');

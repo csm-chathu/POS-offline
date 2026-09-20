@@ -578,7 +578,15 @@ function spawnOfflineApi() {
     ? path.join(process.resourcesPath, 'pos-api', 'src', 'app.js')
     : path.join(__dirname, '..', 'pos-api', 'src', 'app.js');
 
-  const dbPath = path.join(app.getPath('userData'), 'pos.db');
+  const dbPath  = path.join(app.getPath('userData'), 'pos.db');
+  const logPath = path.join(app.getPath('userData'), 'api.log');
+  const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+
+  const stamp = () => new Date().toISOString();
+  logStream.write(`\n--- API start ${stamp()} ---\n`);
+  logStream.write(`exec: ${process.execPath}\n`);
+  logStream.write(`entry: ${apiEntry}\n`);
+  logStream.write(`entry exists: ${fs.existsSync(apiEntry)}\n`);
 
   _apiProcess = spawn(process.execPath, [apiEntry], {
     env: {
@@ -593,9 +601,28 @@ function spawnOfflineApi() {
     stdio: 'pipe',
   });
 
-  _apiProcess.stdout.on('data', d => console.log('[api]', d.toString().trim()));
-  _apiProcess.stderr.on('data', d => console.error('[api]', d.toString().trim()));
-  _apiProcess.on('exit', code => console.log('[api] exited with code', code));
+  _apiProcess.stdout.on('data', d => {
+    const s = d.toString().trim();
+    console.log('[api]', s);
+    logStream.write(`[out] ${s}\n`);
+  });
+  _apiProcess.stderr.on('data', d => {
+    const s = d.toString().trim();
+    console.error('[api]', s);
+    logStream.write(`[err] ${s}\n`);
+  });
+  _apiProcess.on('exit', (code, signal) => {
+    const msg = `[api] exited code=${code} signal=${signal}`;
+    console.log(msg);
+    logStream.write(msg + '\n');
+    logStream.end();
+  });
+  _apiProcess.on('error', (e) => {
+    logStream.write(`[spawn error] ${e.message}\n`);
+    logStream.end();
+  });
+
+  console.log('[offline] API log:', logPath);
 }
 
 // ── Auto-updater ──────────────────────────────────────────────────────────────
@@ -654,6 +681,11 @@ ipcMain.handle('update:check', () => {
 
 ipcMain.handle('update:download', () => {
   autoUpdater.downloadUpdate().catch(err => devLog('error', '[updater] download failed: ' + err.message));
+});
+
+ipcMain.handle('api:read-log', () => {
+  const logPath = path.join(app.getPath('userData'), 'api.log');
+  return fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf8').slice(-8000) : '(no log yet)';
 });
 
 ipcMain.handle('db:backup', () => {
