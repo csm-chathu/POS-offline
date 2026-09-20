@@ -1,9 +1,12 @@
-name: Release Desktop App
+name: Release Offline Desktop App
 
 on:
   push:
     tags:
       - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
   build-windows:
@@ -15,25 +18,6 @@ jobs:
         with:
           node-version: 20
 
-      - name: Create published GitHub Release
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const tag = context.ref.replace('refs/tags/', '');
-            try {
-              await github.rest.repos.createRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag_name: tag,
-                name: tag,
-                draft: false,
-                prerelease: false,
-              });
-            } catch (e) {
-              // Release may already exist — that's fine
-              console.log('Release already exists or error:', e.message);
-            }
-
       - name: Set version from tag
         working-directory: electron
         shell: pwsh
@@ -41,12 +25,30 @@ jobs:
           $version = "${{ github.ref_name }}".TrimStart('v')
           npm version $version --no-git-tag-version
 
+      - name: Install pos-client deps and build
+        working-directory: pos-client
+        run: |
+          npm install
+          npm run build
+        env:
+          VITE_API_URL: http://localhost:8000
+
+      - name: Copy React build to pos-api/public
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force pos-api/public -ErrorAction SilentlyContinue
+          Copy-Item -Recurse pos-client/dist pos-api/public
+
+      - name: Install pos-api deps
+        working-directory: pos-api
+        run: npm install
+
       - name: Install electron deps
         working-directory: electron
         run: npm install
 
-      - name: Build & publish
+      - name: Build & publish offline EXE
         working-directory: electron
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --config electron-builder.config.js --win nsis --publish always
+        run: npx electron-builder --config electron-builder.offline.config.js --win nsis --publish always
