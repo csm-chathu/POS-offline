@@ -102,11 +102,39 @@ if (fs.existsSync(publicDir)) {
 
 const PORT = process.env.PORT || 8000;
 
+async function runMigrations(sequelize) {
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS _migrations (
+      name TEXT PRIMARY KEY,
+      ran_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  const [ran] = await sequelize.query(`SELECT name FROM _migrations`);
+  const done = new Set(ran.map(r => r.name));
+
+  // Add future schema migrations here — they run once and are never repeated
+  const migrations = [
+    // { name: '001_example', sql: `ALTER TABLE products ADD COLUMN weight REAL DEFAULT 0` },
+  ];
+
+  for (const m of migrations) {
+    if (done.has(m.name)) continue;
+    try {
+      await sequelize.query(m.sql);
+      await sequelize.query(`INSERT INTO _migrations (name) VALUES ('${m.name}')`);
+      console.log('[migration] ran:', m.name);
+    } catch (e) {
+      console.error('[migration] failed:', m.name, e.message);
+    }
+  }
+}
+
 async function startServer() {
   // SQLite/offline mode — sync schema and seed default admin before accepting requests
   if (process.env.DIALECT === 'sqlite') {
     const { getTenantDb } = require('./config/db');
     const { sequelize, models } = getTenantDb({}, 'local');
+    await runMigrations(sequelize);
     await sequelize.sync({ alter: true });
     try {
       const bcrypt = require('bcryptjs');
@@ -124,6 +152,38 @@ async function startServer() {
         console.log('[DB] Admin password reset — email: admin@pos.local  password: admin123');
       }
     } catch (e) { console.error('[DB seed error]', e.message); }
+
+    // Seed features and assign all to admin role
+    try {
+      const { Feature, Role } = models;
+      const DEFAULT_FEATURES = [
+        { key: 'dashboard',  label: 'Dashboard',   path: '/dashboard',      group: 'main', sort_order: 1,  icon: 'dashboard',  offline_ok: true },
+        { key: 'pos',        label: 'POS',          path: '/sales/create',   group: 'main', sort_order: 2,  icon: 'pos',        offline_ok: true },
+        { key: 'sales',      label: 'Sales',        path: '/sales',          group: 'main', sort_order: 3,  icon: 'sales',      offline_ok: true },
+        { key: 'products',   label: 'Products',     path: '/products',       group: 'main', sort_order: 4,  icon: 'products',   offline_ok: true },
+        { key: 'customers',  label: 'Customers',    path: '/customers',      group: 'main', sort_order: 5,  icon: 'customers',  offline_ok: true },
+        { key: 'credit',     label: 'Credit Book',  path: '/credit',         group: 'main', sort_order: 6,  icon: 'credit',     offline_ok: true },
+        { key: 'purchases',  label: 'Purchases',    path: '/purchases',      group: 'main', sort_order: 7,  icon: 'purchases',  offline_ok: true },
+        { key: 'suppliers',  label: 'Suppliers',    path: '/suppliers',      group: 'main', sort_order: 8,  icon: 'suppliers',  offline_ok: true },
+        { key: 'categories', label: 'Categories',   path: '/categories',     group: 'main', sort_order: 9,  icon: 'categories', offline_ok: true },
+        { key: 'reports',    label: 'Reports',      path: '/reports',        group: 'mgmt', sort_order: 1,  icon: 'reports',    offline_ok: true },
+        { key: 'invoices',   label: 'Invoices',     path: '/invoices',       group: 'mgmt', sort_order: 2,  icon: 'invoices',   offline_ok: true },
+        { key: 'users',      label: 'Users',        path: '/users',          group: 'mgmt', sort_order: 3,  icon: 'users',      offline_ok: true },
+        { key: 'settings',   label: 'Settings',     path: '/settings',       group: 'mgmt', sort_order: 4,  icon: 'settings',   offline_ok: true },
+      ];
+
+      for (const f of DEFAULT_FEATURES) {
+        await Feature.findOrCreate({ where: { key: f.key }, defaults: f });
+      }
+
+      // Assign every feature to the admin role
+      const adminRole = await Role.findOne({ where: { name: 'admin' } });
+      if (adminRole) {
+        const allFeatures = await Feature.findAll();
+        await adminRole.setFeatures(allFeatures);
+      }
+      console.log('[DB] Features seeded and assigned to admin role');
+    } catch (e) { console.error('[DB feature seed error]', e.message); }
   }
 
   app.listen(PORT, () => console.log(`POS API running on http://localhost:${PORT}`));

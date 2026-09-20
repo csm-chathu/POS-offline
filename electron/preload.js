@@ -19,6 +19,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateDownloaded: (cb) => ipcRenderer.on('update:downloaded', (_e, info) => cb(info)),
   installUpdate:     () => ipcRenderer.invoke('update:install'),
   checkForUpdates:   () => ipcRenderer.invoke('update:check'),
+  downloadUpdate:    () => ipcRenderer.invoke('update:download'),
+  backupDb:          () => ipcRenderer.invoke('db:backup'),
   removeUpdateListeners: () => {
     ipcRenderer.removeAllListeners('update:available');
     ipcRenderer.removeAllListeners('update:downloaded');

@@ -602,8 +602,8 @@ function spawnOfflineApi() {
 
 const { autoUpdater } = require('electron-updater');
 
-autoUpdater.autoDownload = true;
-autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = false;
 autoUpdater.logger = {
   info:  (...a) => { console.log('[updater]',  ...a); devLog('log',   '[updater] ' + a.join(' ')); },
   warn:  (...a) => { console.warn('[updater]', ...a); devLog('warn',  '[updater] ' + a.join(' ')); },
@@ -643,6 +643,24 @@ ipcMain.handle('update:install', () => {
 
 ipcMain.handle('update:check', () => {
   autoUpdater.checkForUpdates().catch(err => devLog('error', '[updater] manual check failed: ' + err.message));
+});
+
+ipcMain.handle('update:download', () => {
+  autoUpdater.downloadUpdate().catch(err => devLog('error', '[updater] download failed: ' + err.message));
+});
+
+ipcMain.handle('db:backup', () => {
+  const dbPath = path.join(app.getPath('userData'), 'pos.db');
+  if (!fs.existsSync(dbPath)) return { success: false, error: 'No database found' };
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const backupPath = path.join(app.getPath('userData'), `pos-backup-${ts}.db`);
+  try {
+    fs.copyFileSync(dbPath, backupPath);
+    console.log('[db:backup] saved to', backupPath);
+    return { success: true, path: backupPath };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 });
 
 // ── Scale (network TCP) ───────────────────────────────────────────────────────
