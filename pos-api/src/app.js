@@ -184,6 +184,33 @@ async function startServer() {
       }
       console.log('[DB] Features seeded and assigned to admin role');
     } catch (e) { console.error('[DB feature seed error]', e.message); }
+
+    // Seed products and categories from bundled data.json (first install only)
+    try {
+      const { Category, Product } = models;
+      const productCount = await Product.count();
+      if (productCount === 0) {
+        const seedFile = path.join(__dirname, '../seeds/data.json');
+        if (fs.existsSync(seedFile)) {
+          console.log('[DB] First install detected — seeding products...');
+          const { categories, products } = JSON.parse(fs.readFileSync(seedFile, 'utf8'));
+
+          // Insert categories preserving original IDs
+          const CHUNK = 200;
+          for (let i = 0; i < categories.length; i += CHUNK) {
+            await Category.bulkCreate(categories.slice(i, i + CHUNK), { ignoreDuplicates: true });
+          }
+          console.log(`[DB] ${categories.length} categories seeded`);
+
+          // Insert products in chunks to avoid memory pressure
+          for (let i = 0; i < products.length; i += CHUNK) {
+            await Product.bulkCreate(products.slice(i, i + CHUNK), { ignoreDuplicates: true });
+            if (i % 2000 === 0) console.log(`[DB] Products seeded: ${Math.min(i + CHUNK, products.length)}/${products.length}`);
+          }
+          console.log(`[DB] ${products.length} products seeded`);
+        }
+      }
+    } catch (e) { console.error('[DB product seed error]', e.message); }
   }
 
   app.listen(PORT, () => console.log(`POS API running on http://localhost:${PORT}`));
