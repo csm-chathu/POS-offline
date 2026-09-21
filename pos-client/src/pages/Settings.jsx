@@ -97,9 +97,21 @@ export default function Settings() {
   const [form, setForm]     = useState({});
   const [saved, setSaved]   = useState(false);
   const [backing, setBacking] = useState(false);
+  const [seedState, setSeedState] = useState(null); // null | 'running' | {ok,categories,products,total_in_db} | {error}
   const logoInputRef        = useRef(null);
   const { setLocale, t }    = useLocale();
   const token               = useSelector(selectToken);
+
+  async function handleSeed() {
+    setSeedState('running');
+    try {
+      const res = await fetch(`${getApiUrl()}/seed`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+      const json = await res.json();
+      setSeedState(json);
+    } catch (e) {
+      setSeedState({ error: e.message });
+    }
+  }
 
   async function handleBackup() {
     setBacking(true);
@@ -528,6 +540,47 @@ export default function Settings() {
 
         </div>
       </div>
+
+      {/* Seed card — only visible in offline/Electron mode */}
+      {window.electronAPI && (
+        <div className="px-3 sm:px-6 pb-6 mt-2">
+          <Card title="Database Seed" icon="🌱">
+            <p className="text-sm text-slate-600 mb-3">
+              Import all products and categories from the bundled seed file into the local database.
+              Safe to run multiple times — existing records are not overwritten.
+            </p>
+
+            <button
+              type="button"
+              onClick={handleSeed}
+              disabled={seedState === 'running'}
+              className="px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {seedState === 'running' ? 'Seeding… please wait' : 'Seed Products & Categories'}
+            </button>
+
+            {seedState === 'running' && (
+              <div className="mt-3 flex items-center gap-2 text-sm text-slate-500">
+                <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                Inserting records, this may take 30–60 seconds…
+              </div>
+            )}
+
+            {seedState && seedState !== 'running' && seedState.ok && (
+              <div className="mt-3 p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-800">
+                ✓ Done — {seedState.categories} categories, {seedState.products} products inserted.
+                Total in database: <strong>{seedState.total_in_db}</strong>
+              </div>
+            )}
+
+            {seedState && seedState !== 'running' && seedState.error && (
+              <div className="mt-3 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-800">
+                ✗ {seedState.error}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
     </form>
   );
 }
