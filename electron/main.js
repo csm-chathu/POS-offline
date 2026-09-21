@@ -4,6 +4,28 @@ const fs   = require('fs');
 const net  = require('net');
 const { spawn } = require('child_process');
 
+// ── Main process log file ─────────────────────────────────────────────────────
+// Redirect console output to a persistent log so crashes are diagnosable.
+// File is created after app is ready (userData path available then).
+let _mainLog = null;
+function initMainLog() {
+  const logPath = path.join(app.getPath('userData'), 'main.log');
+  _mainLog = fs.createWriteStream(logPath, { flags: 'a' });
+  _mainLog.write(`\n=== main process start ${new Date().toISOString()} ===\n`);
+  const _origLog   = console.log.bind(console);
+  const _origWarn  = console.warn.bind(console);
+  const _origError = console.error.bind(console);
+  const write = (level, args) => {
+    const line = `[${level}] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}\n`;
+    _mainLog.write(line);
+  };
+  console.log   = (...a) => { _origLog(...a);   write('log',   a); };
+  console.warn  = (...a) => { _origWarn(...a);  write('warn',  a); };
+  console.error = (...a) => { _origError(...a); write('error', a); };
+  process.on('uncaughtException',  e => { console.error('[uncaught]',  e.message, e.stack); });
+  process.on('unhandledRejection', e => { console.error('[unhandled]', e?.message || e); });
+}
+
 const IS_OFFLINE_BUILD = !!require('./package.json').offline;
 
 let _apiProcess = null;
@@ -688,6 +710,11 @@ ipcMain.handle('api:read-log', () => {
   return fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf8').slice(-8000) : '(no log yet)';
 });
 
+ipcMain.handle('main:read-log', () => {
+  const logPath = path.join(app.getPath('userData'), 'main.log');
+  return fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf8').slice(-8000) : '(no log yet)';
+});
+
 ipcMain.handle('db:backup', () => {
   const dbPath = path.join(app.getPath('userData'), 'pos.db');
   if (!fs.existsSync(dbPath)) return { success: false, error: 'No database found' };
@@ -777,6 +804,7 @@ ipcMain.handle('scale:read-weight', (event, host, port) => {
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 app.whenReady().then(async () => {
+  initMainLog();
   splashOpen = true;
   const splash = createSplashWindow();
 
@@ -805,7 +833,9 @@ app.whenReady().then(async () => {
     if (app.isPackaged) {
       setTimeout(() => {
         devLog('log', `[updater] starting check, app version: ${app.getVersion()}`);
-        autoUpdater.checkForUpdates().catch(err => devLog('log', '[updater] no update check (offline or no internet): ' + err.message));
+        const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000));
+        Promise.race([autoUpdater.checkForUpdates(), timeout])
+          .catch(err => devLog('log', '[updater] skipped: ' + err.message));
       }, 10_000);
     }
   }, 3000);
