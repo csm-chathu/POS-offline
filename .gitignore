@@ -11,6 +11,12 @@ pos-client/.env.production.local
 pos-client/dist/
 pos-client/dist-electron/
 pos-client/release/
+Electron/dist/
+Electron/dist-offline/
+pos-api/public/
+
+# Graphify cache
+graphify-out/cache/
 
 # Logs
 *.log
