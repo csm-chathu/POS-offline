@@ -137,22 +137,22 @@ async function seedProducts(sequelize, models) {
 
   const { categories, products } = JSON.parse(fs.readFileSync(seedFile, 'utf8'));
 
-  // Use one INSERT per row so product names/descriptions with '?' characters
-  // never interfere with Sequelize's regex-based replacements substitution.
+  // Use bind ($1,$2,...) not replacements (?) — bind uses native SQLite C-level
+  // parameterization so values containing '?' never corrupt the query.
   const cols    = 'id,category_id,name,name_si,barcode,sku,description,cost_price,selling_price,wholesale_price,promo_price,promo_start_date,promo_end_date,our_price,expiry_date,stock_qty,alert_qty,unit,active,is_fast_moving';
   const colList = cols.split(',');
-  const prodSql = `INSERT OR IGNORE INTO products (${cols}) VALUES (${colList.map(() => '?').join(',')})`;
+  const prodSql = `INSERT OR IGNORE INTO products (${cols}) VALUES (${colList.map((_, i) => `$${i + 1}`).join(',')})`;
 
   await sequelize.transaction(async (t) => {
     for (const cat of categories) {
-      await sequelize.query('INSERT OR IGNORE INTO categories (id, name) VALUES (?, ?)', { replacements: [cat.id, cat.name], transaction: t });
+      await sequelize.query('INSERT OR IGNORE INTO categories (id, name) VALUES ($1, $2)', { bind: [cat.id, cat.name], transaction: t });
     }
     console.log(`[seed] ${categories.length} categories done`);
 
     for (let i = 0; i < products.length; i++) {
       const p = products[i];
       const values = colList.map(c => p[c] ?? null);
-      await sequelize.query(prodSql, { replacements: values, transaction: t });
+      await sequelize.query(prodSql, { bind: values, transaction: t });
       if (i % 1000 === 0) console.log(`[seed] products ${i}/${products.length}`);
     }
     console.log(`[seed] ${products.length} products done`);
