@@ -32,6 +32,9 @@ jobs:
           Remove-Item -Recurse -Force pos-api/public -ErrorAction SilentlyContinue
           Copy-Item -Recurse pos-client/dist pos-api/public
 
+      - name: Fix Python distutils for node-gyp (Python 3.12 removed distutils)
+        run: pip install setuptools
+
       - name: Install pos-api deps (compiled for Electron runtime)
         working-directory: pos-api
         env:
