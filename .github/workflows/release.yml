@@ -56,3 +56,9 @@ jobs:
           EP_DRAFT: false
           EP_PRE_RELEASE: false
         run: npx electron-builder --config electron-builder.offline.config.js --win nsis --publish always
+
+      - name: Publish release (undraft if electron-builder left it as draft)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${{ github.ref_name }}" --draft=false --repo csm-chathu/POS-offline || true
