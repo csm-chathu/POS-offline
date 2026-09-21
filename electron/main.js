@@ -447,9 +447,15 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     return { success: false, error: `Printer not found: ${configuredName}` };
   }
 
+  // POS-8370 physical paper = 80mm but printable area ≈ 72mm (4mm HW margin each side).
+  // Render at 72mm width so content never hits the hardware margin edge.
+  // 72mm at 96 DPI = 72/25.4*96 ≈ 272px.
+  const PRINT_WIDTH_MM = 72;
+  const PRINT_WIDTH_PX = Math.round(PRINT_WIDTH_MM / 25.4 * 96); // 272
+
   const win = new BrowserWindow({
     show: false,
-    width: is80 ? 400 : 820,
+    width: is80 ? PRINT_WIDTH_PX : 820,
     height: 1200,
     webPreferences: { javascript: true, sandbox: false },
   });
@@ -461,15 +467,15 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   // Give Chromium time to parse, layout, and apply inline CSS before measuring
   await new Promise(r => setTimeout(r, 800));
 
-  // Measure actual rendered content height then set page size to match exactly —
-  // prevents blank top/bottom space and avoids sending 'A4' to a thermal roll.
+  // Measure content height at PRINT_WIDTH_PX — height is exact for this width.
   let pageSize;
   if (is80) {
     const contentPx = await win.webContents.executeJavaScript(
       'Math.ceil(document.documentElement.scrollHeight)'
     ).catch(() => 800);
-    const heightMicrons = Math.ceil(contentPx * 25400 / 96) + 5000; // +5mm buffer
-    pageSize = { width: 80000, height: Math.max(50000, heightMicrons) };
+    const widthMicrons  = Math.round(PRINT_WIDTH_MM * 1000);
+    const heightMicrons = Math.ceil(contentPx * 25400 / 96) + 3000; // +3mm buffer
+    pageSize = { width: widthMicrons, height: Math.max(50000, heightMicrons) };
     devLog('log', `[print-receipt-html] content=${contentPx}px → page=${pageSize.width}×${pageSize.height}µm`);
   } else {
     pageSize = 'A4';
@@ -487,7 +493,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'printableArea' }, pageSize },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });
