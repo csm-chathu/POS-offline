@@ -44,6 +44,7 @@ const Icons = {
   intake:    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="2" height="16" rx="1" strokeWidth={2}/><rect x="7" y="4" width="1" height="16" rx="0.5" strokeWidth={2}/><rect x="10" y="4" width="3" height="16" rx="1" strokeWidth={2}/><rect x="15" y="4" width="1" height="16" rx="0.5" strokeWidth={2}/><rect x="18" y="4" width="3" height="16" rx="1" strokeWidth={2}/></svg>,
   credit:    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" strokeWidth={2}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 10h20M6 15h4"/></svg>,
   reports:   <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 0-2 2h-2a2 2 0 0 1-2-2z"/></svg>,
+  scale:     <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l9-3 9 3M3 6v12l9 3 9-3V6M12 3v18M3 12h18"/></svg>,
   logout:    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"/></svg>,
   bell:      <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11a6.002 6.002 0 0 0-4-5.659V5a2 2 0 1 0-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9"/></svg>,
   chevronsRight: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M6 5l7 7-7 7"/></svg>,
@@ -67,6 +68,7 @@ const PAGE_TITLE_KEYS = {
   '/categories':       'page.categories',
   '/users':            'page.users',
   '/settings':         'page.settings',
+  '/settings/scale':   'Scale Configuration',
   '/admin/data-import':      'Data Import',
   '/admin/provision-tenant': 'Provision Tenant',
   '/reports':          'page.reports',
@@ -411,7 +413,17 @@ export default function AppLayout() {
               })}
             </>
           )}
-          {/* Provision Tenant — super-admin only */}
+          {/* Scale + Provision Tenant — super-admin only */}
+          {isAdmin && (
+            <NavLink to="/settings/scale"
+              title={displayCollapsed ? 'Scale' : undefined}
+              onClick={() => { setMobileOpen(false); expandSidebar(); }}
+              className={({ isActive }) => navCls(isActive)}
+            >
+              {Icons.scale}
+              {!displayCollapsed && <span className="flex-1 truncate">Scale</span>}
+            </NavLink>
+          )}
           {isAdmin && (
             <NavLink to="/admin/provision-tenant"
               title={displayCollapsed ? 'Provision Tenant' : undefined}
@@ -510,6 +522,14 @@ export default function AppLayout() {
                   );
                 })}
               </>
+            )}
+            {isAdmin && (
+              <NavLink to="/settings/scale" onClick={() => setSidebarHover(false)}
+                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
+                  ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
+                {Icons.scale}
+                <span className="flex-1 truncate">Scale</span>
+              </NavLink>
             )}
             {isAdmin && (
               <NavLink to="/admin/provision-tenant" onClick={() => setSidebarHover(false)}

@@ -34,6 +34,7 @@ import ImportDataPage    from '../pages/admin/ImportData';
 import ProvisionTenant  from '../pages/admin/ProvisionTenant';
 import Settings         from '../pages/Settings';
 import RolesPage        from '../pages/settings/Roles';
+import ScalePage        from '../pages/Scale';
 import InvoicesIndex    from '../pages/invoices/Index';
 import InvoiceCreate    from '../pages/invoices/Create';
 import InvoiceShow      from '../pages/invoices/Show';
@@ -136,6 +137,7 @@ export const router = createAppRouter([
               element: <AdminOnlyRoute />,
               children: [
                 { path: 'admin/data-import', element: <ImportDataPage /> },
+                { path: 'settings/scale',    element: <ScalePage /> },
               ],
             },
           ],
