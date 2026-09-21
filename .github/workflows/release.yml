@@ -53,4 +53,6 @@ jobs:
         working-directory: electron
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EP_DRAFT: false
+          EP_PRE_RELEASE: false
         run: npx electron-builder --config electron-builder.offline.config.js --win nsis --publish always
