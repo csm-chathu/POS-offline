@@ -438,8 +438,10 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   const config  = readPrinterConfig();
   const entry   = config.pos || {};
   const is80    = options.paperSize !== 'A4';
+  // For 80mm thermal rolls use a narrow custom page; for A4 use standard.
+  // Never send 'A4' to a thermal printer — it causes blank output.
   const pageSize = is80
-    ? 'A4'
+    ? { width: 80000, height: 2000000 }   // 80 mm wide, tall enough for any receipt
     : 'A4';
   const configuredName = entry.name || '';
   const wc = mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents : event.sender;
