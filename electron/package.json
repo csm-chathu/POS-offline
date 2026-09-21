@@ -1,6 +1,6 @@
 {
     "name": "lmuc-pos-electron",
-    "version": "1.2.5",
+    "version": "1.2.6",
     "description": "LMUC POS Desktop App",
     "main": "main.js",
     "author": "LMUC",
