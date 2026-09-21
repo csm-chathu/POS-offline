@@ -438,11 +438,6 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   const config  = readPrinterConfig();
   const entry   = config.pos || {};
   const is80    = options.paperSize !== 'A4';
-  // For 80mm thermal rolls use a narrow custom page; for A4 use standard.
-  // Never send 'A4' to a thermal printer — it causes blank output.
-  const pageSize = is80
-    ? { width: 80000, height: 2000000 }   // 80 mm wide, tall enough for any receipt
-    : 'A4';
   const configuredName = entry.name || '';
   const wc = mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents : event.sender;
   const deviceName = await resolvePrinterName(wc, configuredName);
@@ -452,10 +447,11 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     return { success: false, error: `Printer not found: ${configuredName}` };
   }
 
+  // 80mm at 96 DPI = 80/25.4*96 ≈ 302px — match window width to paper width exactly
   const win = new BrowserWindow({
     show: false,
-    width: is80 ? 340 : 820,
-    height: 700,
+    width: is80 ? 302 : 820,
+    height: 1200,
     webPreferences: { javascript: true, sandbox: false },
   });
 
@@ -463,8 +459,22 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   await win.webContents.executeJavaScript(
     `document.open('text/html');document.write(${JSON.stringify(html)});document.close();`
   );
-  // Give Chromium time to parse, layout, and apply inline CSS before printing
+  // Give Chromium time to parse, layout, and apply inline CSS before measuring
   await new Promise(r => setTimeout(r, 800));
+
+  // Measure actual rendered content height then set page size to match exactly —
+  // prevents blank top/bottom space and avoids sending 'A4' to a thermal roll.
+  let pageSize;
+  if (is80) {
+    const contentPx = await win.webContents.executeJavaScript(
+      'Math.ceil(document.documentElement.scrollHeight)'
+    ).catch(() => 800);
+    const heightMicrons = Math.ceil(contentPx * 25400 / 96) + 5000; // +5mm buffer
+    pageSize = { width: 80000, height: Math.max(50000, heightMicrons) };
+    devLog('log', `[print-receipt-html] content=${contentPx}px → page=${pageSize.width}×${pageSize.height}µm`);
+  } else {
+    pageSize = 'A4';
+  }
 
   return new Promise((resolve) => {
     let settled = false;
