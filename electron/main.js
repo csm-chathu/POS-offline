@@ -447,10 +447,9 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     return { success: false, error: `Printer not found: ${configuredName}` };
   }
 
-  // 80mm at 96 DPI = 80/25.4*96 ≈ 302px — match window width to paper width exactly
   const win = new BrowserWindow({
     show: false,
-    width: is80 ? 302 : 820,
+    width: is80 ? 400 : 820,
     height: 1200,
     webPreferences: { javascript: true, sandbox: false },
   });
@@ -488,7 +487,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'printableArea' }, pageSize },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });
