@@ -105,7 +105,7 @@ export default function Settings() {
   async function handleSeed() {
     setSeedState('running');
     try {
-      const res = await fetch(`${getApiUrl()}/seed`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${getApiUrl()}/api/seed`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
       const json = await res.json();
       setSeedState(json);
     } catch (e) {
