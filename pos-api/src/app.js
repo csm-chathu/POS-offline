@@ -151,12 +151,15 @@ async function seedProducts(sequelize, models) {
 
     for (let i = 0; i < products.length; i++) {
       const p = products[i];
-      const values = colList.map(c => p[c] ?? null);
+      const values = colList.map(c => c === 'active' ? 1 : (p[c] ?? null));
       await sequelize.query(prodSql, { bind: values, transaction: t });
       if (i % 1000 === 0) console.log(`[seed] products ${i}/${products.length}`);
     }
     console.log(`[seed] ${products.length} products done`);
   });
+
+  // Activate any products that were previously seeded with active=0
+  await sequelize.query('UPDATE products SET active = 1 WHERE active = 0 OR active IS NULL');
 
   const productCount = await Product.count();
   return { ok: true, categories: categories.length, products: products.length, total_in_db: productCount };
