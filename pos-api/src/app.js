@@ -143,20 +143,24 @@ async function seedProducts(sequelize, models) {
   const colList = cols.split(',');
   const prodSql = `INSERT OR IGNORE INTO products (${cols}) VALUES (${colList.map((_, i) => `$${i + 1}`).join(',')})`;
 
+  // Categories in their own transaction — commits even if products fail later
   await sequelize.transaction(async (t) => {
     for (const cat of categories) {
       await sequelize.query('INSERT OR IGNORE INTO categories (id, name) VALUES ($1, $2)', { bind: [cat.id, cat.name], transaction: t });
     }
-    console.log(`[seed] ${categories.length} categories done`);
+  });
+  console.log(`[seed] ${categories.length} categories done`);
 
+  // Products in their own transaction
+  await sequelize.transaction(async (t) => {
     for (let i = 0; i < products.length; i++) {
       const p = products[i];
       const values = colList.map(c => c === 'active' ? 1 : (p[c] ?? null));
       await sequelize.query(prodSql, { bind: values, transaction: t });
       if (i % 1000 === 0) console.log(`[seed] products ${i}/${products.length}`);
     }
-    console.log(`[seed] ${products.length} products done`);
   });
+  console.log(`[seed] ${products.length} products done`);
 
   // Activate any products that were previously seeded with active=0
   await sequelize.query('UPDATE products SET active = 1 WHERE active = 0 OR active IS NULL');
