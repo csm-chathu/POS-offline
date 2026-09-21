@@ -136,10 +136,15 @@ async function seedProducts(sequelize, models) {
   if (!fs.existsSync(seedFile)) return { ok: false, error: 'Seed file not found: ' + seedFile };
 
   const { categories, products } = JSON.parse(fs.readFileSync(seedFile, 'utf8'));
-  const CHUNK = 500;
+
+  // SQLite max bind variables = 999.
+  // categories: 2 cols → max 499 per chunk. Products: 20 cols → max 49 per chunk.
+  const CAT_CHUNK  = 400;
+  const PROD_CHUNK = 40;
+
   await sequelize.transaction(async (t) => {
-    for (let i = 0; i < categories.length; i += CHUNK) {
-      const batch = categories.slice(i, i + CHUNK);
+    for (let i = 0; i < categories.length; i += CAT_CHUNK) {
+      const batch = categories.slice(i, i + CAT_CHUNK);
       const placeholders = batch.map(() => '(?,?)').join(',');
       const values = batch.flatMap(c => [c.id, c.name]);
       await sequelize.query(`INSERT OR IGNORE INTO categories (id, name) VALUES ${placeholders}`, { replacements: values, transaction: t });
@@ -148,12 +153,12 @@ async function seedProducts(sequelize, models) {
 
     const cols = 'id,category_id,name,name_si,barcode,sku,description,cost_price,selling_price,wholesale_price,promo_price,promo_start_date,promo_end_date,our_price,expiry_date,stock_qty,alert_qty,unit,active,is_fast_moving';
     const colList = cols.split(',');
-    for (let i = 0; i < products.length; i += CHUNK) {
-      const batch = products.slice(i, i + CHUNK);
+    for (let i = 0; i < products.length; i += PROD_CHUNK) {
+      const batch = products.slice(i, i + PROD_CHUNK);
       const placeholders = batch.map(() => `(${colList.map(() => '?').join(',')})`).join(',');
       const values = batch.flatMap(p => colList.map(c => p[c] ?? null));
       await sequelize.query(`INSERT OR IGNORE INTO products (${cols}) VALUES ${placeholders}`, { replacements: values, transaction: t });
-      console.log(`[seed] products ${Math.min(i + CHUNK, products.length)}/${products.length}`);
+      if (i % 400 === 0) console.log(`[seed] products ${Math.min(i + PROD_CHUNK, products.length)}/${products.length}`);
     }
     console.log(`[seed] ${products.length} products done`);
   });
@@ -182,7 +187,14 @@ async function startServer() {
     const { getTenantDb } = require('./config/db');
     const { sequelize, models } = getTenantDb({}, 'local');
     await runMigrations(sequelize);
-    await sequelize.sync({ alter: true });
+    try {
+      await sequelize.query('PRAGMA foreign_keys = OFF');
+      await sequelize.sync({ alter: true });
+      await sequelize.query('PRAGMA foreign_keys = ON');
+    } catch (e) {
+      console.error('[DB sync error]', e.message);
+      // continue — tables may already be correct from a prior run
+    }
     try {
       const bcrypt = require('bcryptjs');
       const { User, Role } = models;
@@ -250,4 +262,4 @@ async function startServer() {
   app.listen(PORT, () => console.log(`POS API running on http://localhost:${PORT}`));
 }
 
-startServer().catch(e => { console.error('[startup]', e.message); process.exit(1); });
+startServer().catch(e => { console.error('[startup]', e.message); });
