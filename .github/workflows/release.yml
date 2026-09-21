@@ -32,17 +32,19 @@ jobs:
           Remove-Item -Recurse -Force pos-api/public -ErrorAction SilentlyContinue
           Copy-Item -Recurse pos-client/dist pos-api/public
 
-      - name: Install pos-api deps
+      - name: Install pos-api deps (compiled for Electron runtime)
         working-directory: pos-api
+        env:
+          npm_config_target: "31.7.7"
+          npm_config_target_arch: x64
+          npm_config_disturl: https://electronjs.org/headers
+          npm_config_runtime: electron
+          npm_config_build_from_source: "true"
         run: npm install
 
       - name: Install electron deps
         working-directory: electron
         run: npm install
-
-      - name: Rebuild native modules for Electron ABI
-        working-directory: electron
-        run: npx @electron/rebuild --module-dir ../pos-api
 
       - name: Build & publish offline EXE
         working-directory: electron
