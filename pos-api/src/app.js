@@ -162,7 +162,6 @@ async function seedProducts(sequelize, models) {
     for (let i = 0; i < products.length; i++) {
       const p = products[i];
       const values = colList.map(c => {
-        if (c === 'active') return 1;
         if (c === 'created_at' || c === 'updated_at') return now;
         return p[c] ?? null;
       });
@@ -171,9 +170,6 @@ async function seedProducts(sequelize, models) {
     }
   });
   console.log(`[seed] ${products.length} products done`);
-
-  // Activate any products that were previously seeded with active=0
-  await sequelize.query('UPDATE products SET active = 1 WHERE active = 0 OR active IS NULL');
 
   const productCount = await Product.count();
   return { ok: true, categories: categories.length, products: products.length, total_in_db: productCount };
@@ -269,9 +265,6 @@ async function startServer() {
       } else {
         console.log(`[DB] Skipping product seed — ${productCount} products already exist`);
       }
-      // Repair: activate any products seeded with active=0 by older builds
-      const [fixed] = await sequelize.query('UPDATE products SET active = 1 WHERE active = 0 OR active IS NULL');
-      if (fixed?.changes > 0) console.log(`[DB] Activated ${fixed.changes} previously inactive product(s)`);
     } catch (e) { console.error('[DB product seed error]', e.message, e.stack); }
   }
 
