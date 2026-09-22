@@ -146,9 +146,13 @@ async function seedProducts(sequelize, models) {
   const prodSql = `INSERT OR IGNORE INTO products (${cols}) VALUES (${colList.map((_, i) => `$${i + 1}`).join(',')})`;
 
   // Categories in their own transaction — commits even if products fail later
+  // created_at/updated_at must be included — they are NOT NULL with no DB default.
   await sequelize.transaction(async (t) => {
     for (const cat of categories) {
-      await sequelize.query('INSERT OR IGNORE INTO categories (id, name) VALUES ($1, $2)', { bind: [cat.id, cat.name], transaction: t });
+      await sequelize.query(
+        'INSERT OR IGNORE INTO categories (id, name, created_at, updated_at) VALUES ($1, $2, $3, $4)',
+        { bind: [cat.id, cat.name, now, now], transaction: t }
+      );
     }
   });
   console.log(`[seed] ${categories.length} categories done`);
