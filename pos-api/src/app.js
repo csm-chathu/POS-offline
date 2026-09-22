@@ -114,7 +114,7 @@ async function runMigrations(sequelize) {
 
   // Add future schema migrations here — they run once and are never repeated
   const migrations = [
-    // { name: '001_example', sql: `ALTER TABLE products ADD COLUMN weight REAL DEFAULT 0` },
+    { name: '002_remove_duplicate_pos_feature', sql: `DELETE FROM features WHERE \`key\` = 'pos'` },
   ];
 
   for (const m of migrations) {
@@ -225,9 +225,9 @@ async function startServer() {
     try {
       const { Feature, Role } = models;
       const DEFAULT_FEATURES = [
-        { key: 'dashboard',  label: 'Dashboard',   path: '/dashboard',      group: 'main', sort_order: 1,  icon: 'dashboard',  offline_ok: true },
-        { key: 'pos',        label: 'POS',          path: '/sales/create',   group: 'main', sort_order: 2,  icon: 'pos',        offline_ok: true },
-        { key: 'sales',      label: 'Sales',        path: '/sales',          group: 'main', sort_order: 3,  icon: 'sales',      offline_ok: true },
+        { key: 'dashboard',  label: 'Dashboard',       path: '/dashboard',      group: 'main', sort_order: 1,  icon: 'dashboard',  offline_ok: true },
+        { key: 'new_sale',   label: 'New Sale (POS)',  path: '/sales/create',   group: 'main', sort_order: 2,  icon: 'pos',        offline_ok: true },
+        { key: 'sales',      label: 'Sales',           path: '/sales',          group: 'main', sort_order: 3,  icon: 'sales',      offline_ok: true },
         { key: 'products',   label: 'Products',     path: '/products',       group: 'main', sort_order: 4,  icon: 'products',   offline_ok: true },
         { key: 'customers',  label: 'Customers',    path: '/customers',      group: 'main', sort_order: 5,  icon: 'customers',  offline_ok: true },
         { key: 'credit',     label: 'Credit Book',  path: '/credit',         group: 'main', sort_order: 6,  icon: 'credit',     offline_ok: true },
