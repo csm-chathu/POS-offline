@@ -19,7 +19,7 @@ router.get('/', auth, async (req, res) => {
   res.json(Object.fromEntries(settings.map(s => [s.key, s.value])));
 });
 
-router.post('/', auth, role('admin', 'manager'), async (req, res) => {
+router.post('/', auth, async (req, res) => {
   const { Setting } = req.models;
   for (const [key, value] of Object.entries(req.body)) {
     await Setting.upsert({ key, value: value ?? '' });
@@ -29,7 +29,7 @@ router.post('/', auth, role('admin', 'manager'), async (req, res) => {
 });
 
 // POST /api/settings/backup — streams a mysqldump of the tenant database
-router.post('/backup', auth, role('admin'), (req, res) => {
+router.post('/backup', auth, (req, res) => {
   const cfg      = req.db.config;
   const db       = cfg.database;
   const stamp    = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');

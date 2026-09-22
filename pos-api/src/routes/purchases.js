@@ -18,7 +18,7 @@ router.get('/', auth, async (req, res) => {
   res.json({ data: rows, total: count, page, last_page: Math.ceil(count / limit) });
 });
 
-router.post('/', auth, role('admin', 'manager'), async (req, res) => {
+router.post('/', auth, async (req, res) => {
   const { Purchase, PurchaseItem, Product, StockMovement } = req.models;
   const { items = [], ...data } = req.body;
 
@@ -67,7 +67,7 @@ router.get('/:id', auth, async (req, res) => {
   res.json(purchase);
 });
 
-router.delete('/:id', auth, role('admin'), async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   const { Purchase } = req.models;
   const p = await Purchase.findByPk(req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });

@@ -151,7 +151,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // DELETE /api/sales/:id
-router.delete('/:id', auth, role('admin', 'manager'), async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   const { Sale } = req.models;
   const sale = await Sale.findByPk(req.params.id);
   if (!sale) return res.status(404).json({ error: 'Not found' });

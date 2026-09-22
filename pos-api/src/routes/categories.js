@@ -8,7 +8,7 @@ router.get('/', auth, async (req, res) => {
   res.json(rows);
 });
 
-router.post('/import', auth, role('admin', 'manager'), async (req, res) => {
+router.post('/import', auth, async (req, res) => {
   const { Category } = req.models;
   const rows = Array.isArray(req.body) ? req.body : (req.body.categories || []);
   let created = 0;
@@ -29,7 +29,7 @@ router.post('/import', auth, role('admin', 'manager'), async (req, res) => {
 });
 
 // POST /api/categories/truncate — remove all categories (admin only)
-router.post('/truncate', auth, role('admin'), async (req, res) => {
+router.post('/truncate', auth, async (req, res) => {
   const confirmed = req.body?.confirm === 'TRUNCATE_CATEGORIES';
   if (!confirmed) {
     return res.status(400).json({ error: 'Confirmation token required (TRUNCATE_CATEGORIES).' });
@@ -44,7 +44,7 @@ router.post('/truncate', auth, role('admin'), async (req, res) => {
   }
 });
 
-router.post('/', auth, role('admin', 'manager'), async (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
     const name = String(req.body.name || '').trim();
     if (!name) return res.status(422).json({ error: 'Name is required' });
@@ -53,7 +53,7 @@ router.post('/', auth, role('admin', 'manager'), async (req, res) => {
   } catch (e) { res.status(422).json({ error: e.message }); }
 });
 
-router.put('/:id', auth, role('admin', 'manager'), async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   try {
     const { Category } = req.models;
     const cat = await Category.findByPk(req.params.id);
@@ -65,7 +65,7 @@ router.put('/:id', auth, role('admin', 'manager'), async (req, res) => {
   } catch (e) { res.status(422).json({ error: e.message }); }
 });
 
-router.delete('/:id', auth, role('admin', 'manager'), async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     const { Category } = req.models;
     const cat = await Category.findByPk(req.params.id);

@@ -84,7 +84,7 @@ router.get('/export', auth, async (req, res) => {
 });
 
 // GET /api/products/intake-lookup?barcode=  — finds any product (active or not)
-router.get('/intake-lookup', auth, role('admin', 'manager'), async (req, res) => {
+router.get('/intake-lookup', auth, async (req, res) => {
   const { Product, Category } = req.models;
   const barcode = (req.query.barcode || '').trim();
   if (!barcode) return res.status(400).json({ error: 'barcode required' });
@@ -163,7 +163,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // POST /api/products/import — batch CSV import
-router.post('/import', auth, role('admin', 'manager'), async (req, res) => {
+router.post('/import', auth, async (req, res) => {
   const { Product } = req.models;
   const rows = Array.isArray(req.body) ? req.body : (req.body.products || []);
   let created = 0, skipped = 0;
@@ -189,7 +189,7 @@ router.post('/import', auth, role('admin', 'manager'), async (req, res) => {
 });
 
 // POST /api/products/truncate — remove all products (admin only)
-router.post('/truncate', auth, role('admin'), async (req, res) => {
+router.post('/truncate', auth, async (req, res) => {
   const confirmed = req.body?.confirm === 'TRUNCATE_PRODUCTS';
   if (!confirmed) {
     return res.status(400).json({ error: 'Confirmation token required (TRUNCATE_PRODUCTS).' });
@@ -207,7 +207,7 @@ router.post('/truncate', auth, role('admin'), async (req, res) => {
 });
 
 // POST /api/products
-router.post('/', auth, role('admin', 'manager'), async (req, res) => {
+router.post('/', auth, async (req, res) => {
   const { Product, ProductVariant } = req.models;
   const { variants = [], ...data } = req.body;
 
@@ -239,7 +239,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // PUT /api/products/:id
-router.put('/:id', auth, role('admin', 'manager'), async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   const { Product, ProductVariant } = req.models;
   const product = await Product.findByPk(req.params.id);
   if (!product) return res.status(404).json({ error: 'Not found' });
@@ -271,7 +271,7 @@ router.put('/:id', auth, role('admin', 'manager'), async (req, res) => {
 });
 
 // DELETE /api/products/:id
-router.delete('/:id', auth, role('admin', 'manager'), async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   const { Product } = req.models;
   const product = await Product.findByPk(req.params.id);
   if (!product) return res.status(404).json({ error: 'Not found' });

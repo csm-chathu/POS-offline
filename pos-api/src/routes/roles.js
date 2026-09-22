@@ -54,7 +54,7 @@ router.get('/features', auth, async (req, res) => {
 });
 
 // POST /api/roles — create a new role
-router.post('/', auth, role('admin', 'manager', 'setup'), async (req, res) => {
+router.post('/', auth, async (req, res) => {
   const { Role } = req.models;
   const name = (req.body.name || '').trim().toLowerCase();
   if (!name) return res.status(422).json({ error: 'Role name is required' });
@@ -65,7 +65,7 @@ router.post('/', auth, role('admin', 'manager', 'setup'), async (req, res) => {
 });
 
 // PUT /api/roles/:id — rename a role
-router.put('/:id', auth, role('admin', 'manager', 'setup'), async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   const { Role } = req.models;
   const r = await Role.findByPk(req.params.id);
   if (!r) return res.status(404).json({ error: 'Role not found' });
@@ -77,7 +77,7 @@ router.put('/:id', auth, role('admin', 'manager', 'setup'), async (req, res) => 
 });
 
 // DELETE /api/roles/:id — delete a role
-router.delete('/:id', auth, role('admin', 'manager', 'setup'), async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   const { Role } = req.models;
   const r = await Role.findByPk(req.params.id);
   if (!r) return res.status(404).json({ error: 'Role not found' });
@@ -87,7 +87,7 @@ router.delete('/:id', auth, role('admin', 'manager', 'setup'), async (req, res) 
 });
 
 // PUT /api/roles/:id/features — assign features to a role
-router.put('/:id/features', auth, role('admin', 'manager', 'setup'), async (req, res) => {
+router.put('/:id/features', auth, async (req, res) => {
   const { Role, Feature } = req.models;
   const r = await Role.findByPk(req.params.id);
   if (!r) return res.status(404).json({ error: 'Role not found' });

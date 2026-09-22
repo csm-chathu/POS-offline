@@ -20,7 +20,7 @@ router.get('/public', async (req, res) => {
 });
 
 // GET /api/users
-router.get('/', auth, role('admin', 'manager', 'setup'), async (req, res) => {
+router.get('/', auth, async (req, res) => {
   const { User, Role } = req.models;
   const users = await User.findAll({
     include: [{ model: Role, through: { attributes: [] } }],
@@ -33,7 +33,7 @@ router.get('/', auth, role('admin', 'manager', 'setup'), async (req, res) => {
 });
 
 // POST /api/users
-router.post('/', auth, role('admin', 'manager', 'setup'), async (req, res) => {
+router.post('/', auth, async (req, res) => {
   const { User, Role } = req.models;
   const { role: roleName, password, ...data } = req.body;
   data.password = await bcrypt.hash(password, 12);
@@ -44,7 +44,7 @@ router.post('/', auth, role('admin', 'manager', 'setup'), async (req, res) => {
 });
 
 // PUT /api/users/:id
-router.put('/:id', auth, role('admin', 'manager', 'setup'), async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   const { User, Role } = req.models;
   const user = await User.findByPk(req.params.id, { include: [{ model: Role, through: { attributes: [] } }] });
   if (!user) return res.status(404).json({ error: 'Not found' });
@@ -60,7 +60,7 @@ router.put('/:id', auth, role('admin', 'manager', 'setup'), async (req, res) => 
 });
 
 // DELETE /api/users/:id
-router.delete('/:id', auth, role('admin'), async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   const { User, Role } = req.models;
   if (req.params.id == req.user.id) return res.status(422).json({ error: 'Cannot delete yourself' });
   const user = await User.findByPk(req.params.id, { include: [{ model: Role, through: { attributes: [] } }] });
@@ -71,7 +71,7 @@ router.delete('/:id', auth, role('admin'), async (req, res) => {
 });
 
 // GET /api/users/:id/features — get this user's direct feature overrides
-router.get('/:id/features', auth, role('admin', 'manager', 'setup'), async (req, res) => {
+router.get('/:id/features', auth, async (req, res) => {
   const { User, Feature } = req.models;
   const user = await User.findByPk(req.params.id, {
     include: [{ model: Feature, as: 'DirectFeatures', through: { attributes: [] } }],
@@ -82,7 +82,7 @@ router.get('/:id/features', auth, role('admin', 'manager', 'setup'), async (req,
 });
 
 // PUT /api/users/:id/features — assign features to user (empty array = reset to role defaults)
-router.put('/:id/features', auth, role('admin'), async (req, res) => {
+router.put('/:id/features', auth, async (req, res) => {
   const { User, Feature } = req.models;
   const { features } = req.body;
   const user = await User.findByPk(req.params.id);
