@@ -3,6 +3,22 @@ const bcrypt  = require('bcryptjs');
 const auth    = require('../middleware/auth');
 const role    = require('../middleware/role');
 
+// GET /api/users/public — unauthenticated, for login screen user tiles
+router.get('/public', async (req, res) => {
+  try {
+    const { User, Role } = req.models;
+    const users = await User.findAll({
+      include: [{ model: Role, through: { attributes: [] } }],
+      attributes: ['id', 'name', 'email'],
+      order: [['name', 'ASC']],
+    });
+    const result = users
+      .map(u => ({ id: u.id, name: u.name, email: u.email, role: u.Roles?.[0]?.name ?? 'cashier' }))
+      .filter(u => u.role !== 'admin');
+    res.json(result);
+  } catch { res.json([]); }
+});
+
 // GET /api/users
 router.get('/', auth, role('admin', 'manager'), async (req, res) => {
   const { User, Role } = req.models;
