@@ -389,11 +389,11 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-5 min-h-screen" style={{ backgroundColor: isDark ? '#1c1c1c' : '#F3F4F6' }}>
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-5" style={{ backgroundColor: isDark ? '#1c1c1c' : '#F3F4F6' }}>
 
       {/* Row 1: Stats + Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-stretch">
-        <div className="lg:col-span-2 grid grid-cols-2 gap-4 auto-rows-fr">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 items-stretch">
+        <div className="md:col-span-1 lg:col-span-2 grid grid-cols-2 gap-4 auto-rows-fr">
           <StatCard label={t('dash.today_sales')} icon={icons.dollar} iconBg="bg-green-100 dark:bg-green-900/40"
             value={fmtRs(data?.todaySales)} sub={`${data?.todayBills || 0} bills today`} valueColor="text-green-600" isDark={isDark} />
           <StatCard label={t('dash.month_sales')} icon={icons.chart} iconBg="bg-blue-100 dark:bg-blue-900/40"
@@ -403,14 +403,14 @@ export default function Dashboard() {
           <StatCard label={t('dash.low_stock')} icon={icons.alert} iconBg="bg-red-100 dark:bg-red-900/40"
             value={data?.lowStockCount ?? 0} sub="needs attention" valueColor="text-red-500" isDark={isDark} />
         </div>
-        <div className="lg:col-span-3 h-full">
+        <div className="md:col-span-1 lg:col-span-3 h-full">
           <HourlyChart hourlySales={data?.hourlySales || []} dates={dates} isDark={isDark} />
         </div>
       </div>
 
       {/* Recent Sales + Quick Actions (left) | Fast Moving (right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
-        <div className="lg:col-span-3 flex flex-col gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 items-start">
+        <div className="md:col-span-1 lg:col-span-3 flex flex-col gap-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <QuickBtn label={t('btn.new_sale')}     icon={icons.pos}      color="bg-[#1E40AF] hover:bg-blue-900"    onClick={() => navigate('/sales/create')} />
             <QuickBtn label={t('btn.new_product')}  icon={icons.product}  color="bg-purple-700 hover:bg-purple-800" onClick={() => navigate('/products/create')} />
@@ -419,7 +419,7 @@ export default function Dashboard() {
           </div>
           <RecentSales sales={data?.recentSales} onView={() => navigate('/sales')} isDark={isDark} />
         </div>
-        <div className="lg:col-span-2">
+        <div className="md:col-span-1 lg:col-span-2">
           <FastMoving items={data?.fastMoving} isDark={isDark} />
         </div>
       </div>
