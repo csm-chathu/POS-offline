@@ -130,6 +130,7 @@ export default function UsersIndex() {
   const me   = useSelector(selectCurrentUser);
   const myRole = useSelector(selectRole);
   const isAdmin = myRole === 'admin';
+  const canManageFeatures = isAdmin || myRole === 'setup' || myRole === 'manager';
 
   const [modal, setModal]           = useState(null);
   const [form, setForm]             = useState(empty);
@@ -138,7 +139,7 @@ export default function UsersIndex() {
 
   const { data: users = [], isLoading } = useGetUsersQuery();
   const { data: rolesData = [] }        = useGetRolesQuery();
-  const roleNames = rolesData.map(r => r.name);
+  const roleNames = rolesData.map(r => r.name).filter(r => r !== 'admin');
   const [create, { isLoading: creating }] = useCreateUserMutation();
   const [update, { isLoading: updating }] = useUpdateUserMutation();
   const [del] = useDeleteUserMutation();
@@ -200,7 +201,7 @@ export default function UsersIndex() {
                 className="flex-1 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                 {t('btn.edit')}
               </button>
-              {isAdmin && u.role !== 'admin' && (
+              {canManageFeatures && u.role !== 'admin' && (
                 <button onClick={() => setFeatureUser(u)}
                   className="flex-1 py-1.5 text-xs font-semibold text-violet-600 bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors">
                   Features
@@ -239,7 +240,7 @@ export default function UsersIndex() {
                   <td className="px-4 py-3 text-center">{roleBadge(u.role)}</td>
                   <td className="px-4 py-3 text-right whitespace-nowrap space-x-3">
                     <button onClick={() => openEdit(u)} className="text-blue-600 hover:text-blue-800 font-medium">{t('btn.edit')}</button>
-                    {isAdmin && u.role !== 'admin' && (
+                    {canManageFeatures && u.role !== 'admin' && (
                       <button onClick={() => setFeatureUser(u)} className="text-violet-600 hover:text-violet-800 font-medium">Features</button>
                     )}
                     {u.id !== me?.id && (
