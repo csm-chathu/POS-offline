@@ -20,7 +20,7 @@ router.get('/public', async (req, res) => {
 });
 
 // GET /api/users
-router.get('/', auth, role('admin', 'manager'), async (req, res) => {
+router.get('/', auth, role('admin', 'manager', 'setup'), async (req, res) => {
   const { User, Role } = req.models;
   const users = await User.findAll({
     include: [{ model: Role, through: { attributes: [] } }],
@@ -33,7 +33,7 @@ router.get('/', auth, role('admin', 'manager'), async (req, res) => {
 });
 
 // POST /api/users
-router.post('/', auth, role('admin', 'manager'), async (req, res) => {
+router.post('/', auth, role('admin', 'manager', 'setup'), async (req, res) => {
   const { User, Role } = req.models;
   const { role: roleName, password, ...data } = req.body;
   data.password = await bcrypt.hash(password, 12);
@@ -44,7 +44,7 @@ router.post('/', auth, role('admin', 'manager'), async (req, res) => {
 });
 
 // PUT /api/users/:id
-router.put('/:id', auth, role('admin', 'manager'), async (req, res) => {
+router.put('/:id', auth, role('admin', 'manager', 'setup'), async (req, res) => {
   const { User, Role } = req.models;
   const user = await User.findByPk(req.params.id, { include: [{ model: Role, through: { attributes: [] } }] });
   if (!user) return res.status(404).json({ error: 'Not found' });
@@ -71,7 +71,7 @@ router.delete('/:id', auth, role('admin'), async (req, res) => {
 });
 
 // GET /api/users/:id/features — get this user's direct feature overrides
-router.get('/:id/features', auth, role('admin', 'manager'), async (req, res) => {
+router.get('/:id/features', auth, role('admin', 'manager', 'setup'), async (req, res) => {
   const { User, Feature } = req.models;
   const user = await User.findByPk(req.params.id, {
     include: [{ model: Feature, as: 'DirectFeatures', through: { attributes: [] } }],
