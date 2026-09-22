@@ -116,7 +116,7 @@ export default function AppLayout() {
   const notifCount = useNotifBadge(token);
 
   const [collapsed, setCollapsed] = useState(
-    () => localStorage.getItem('sidebar_collapsed') === 'true'
+    () => localStorage.getItem('sidebar_collapsed') === 'true' || window.innerWidth < 900
   );
   const [sidebarHover, setSidebarHover] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -128,6 +128,15 @@ export default function AppLayout() {
     const t = setTimeout(() => setRouting(false), 350);
     return () => clearTimeout(t);
   }, [location.pathname]);
+
+  // Auto-collapse sidebar on small windows
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth < 900) setCollapsed(true);
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     fetch(`${API}/api/settings/public`)

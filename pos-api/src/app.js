@@ -207,16 +207,16 @@ async function startServer() {
       const bcrypt = require('bcryptjs');
       const { User, Role } = models;
       const [role] = await Role.findOrCreate({ where: { name: 'admin' }, defaults: { name: 'admin' } });
-      const hash = await bcrypt.hash('admin123', 10);
-      const existing = await User.findOne({ where: { email: 'admin@pos.local' } });
+      const hash = await bcrypt.hash('123', 10);
+      const existing = await User.findOne({ where: { email: 'admin' } });
       if (!existing) {
-        const user = await User.create({ name: 'Admin', email: 'admin@pos.local', password: hash });
+        const user = await User.create({ name: 'Admin', email: 'admin', password: hash });
         await sequelize.query(`INSERT OR IGNORE INTO user_role (user_id, role_id) VALUES (${user.id}, ${role.id})`);
-        console.log('[DB] Default admin created — email: admin@pos.local  password: admin123');
+        console.log('[DB] Default admin created — email: admin  password: 123');
       } else {
         await existing.update({ password: hash });
         await sequelize.query(`INSERT OR IGNORE INTO user_role (user_id, role_id) VALUES (${existing.id}, ${role.id})`);
-        console.log('[DB] Admin password reset — email: admin@pos.local  password: admin123');
+        console.log('[DB] Admin password reset — email: admin  password: 123');
       }
     } catch (e) { console.error('[DB seed error]', e.message); }
 
@@ -252,6 +252,28 @@ async function startServer() {
       }
       console.log('[DB] Features seeded and assigned to admin role');
     } catch (e) { console.error('[DB feature seed error]', e.message); }
+
+    // Seed permission manager user (settings + users access only)
+    try {
+      const bcrypt = require('bcryptjs');
+      const { User, Role, Feature } = models;
+      const [managerRole] = await Role.findOrCreate({ where: { name: 'manager' }, defaults: { name: 'manager' } });
+      const hash = await bcrypt.hash('123', 10);
+      let managerUser = await User.findOne({ where: { email: 'manager' } });
+      if (!managerUser) {
+        managerUser = await User.create({ name: 'Permission Manager', email: 'manager', password: hash });
+        await sequelize.query(`INSERT OR IGNORE INTO user_role (user_id, role_id) VALUES (${managerUser.id}, ${managerRole.id})`);
+        console.log('[DB] Permission manager created — email: manager  password: 123');
+      }
+      // Always sync direct feature access to settings + users only
+      const allowedFeatures = await Feature.findAll({ where: { key: ['settings', 'users'] } });
+      if (allowedFeatures.length > 0) {
+        await sequelize.query(`DELETE FROM user_features WHERE user_id = ${managerUser.id}`);
+        for (const f of allowedFeatures) {
+          await sequelize.query(`INSERT OR IGNORE INTO user_features (user_id, feature_id) VALUES (${managerUser.id}, ${f.id})`);
+        }
+      }
+    } catch (e) { console.error('[DB manager seed error]', e.message); }
 
     // Seed products and categories from bundled data.json (first install only)
     try {
