@@ -34,6 +34,18 @@ app.commandLine.appendSwitch('high-dpi-support', '1');
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
 app.commandLine.appendSwitch('kiosk-printing');
 
+// Single-instance lock — if a second instance is launched, focus the existing window and quit the new one
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
 const DEFAULT_APP_URL = process.env.APP_URL || 'http://localhost:5173';
 
 let mainWindow;
