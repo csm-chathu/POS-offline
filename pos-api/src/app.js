@@ -139,8 +139,10 @@ async function seedProducts(sequelize, models) {
 
   // Use bind ($1,$2,...) not replacements (?) — bind uses native SQLite C-level
   // parameterization so values containing '?' never corrupt the query.
-  const cols    = 'id,category_id,name,name_si,barcode,sku,description,cost_price,selling_price,wholesale_price,promo_price,promo_start_date,promo_end_date,our_price,expiry_date,stock_qty,alert_qty,unit,active,is_fast_moving';
+  // created_at/updated_at must be included explicitly — they are NOT NULL with no DB default.
+  const cols    = 'id,category_id,name,name_si,barcode,sku,description,cost_price,selling_price,wholesale_price,promo_price,promo_start_date,promo_end_date,our_price,expiry_date,stock_qty,alert_qty,unit,active,is_fast_moving,created_at,updated_at';
   const colList = cols.split(',');
+  const now     = new Date().toISOString().replace('T', ' ').slice(0, 19);
   const prodSql = `INSERT OR IGNORE INTO products (${cols}) VALUES (${colList.map((_, i) => `$${i + 1}`).join(',')})`;
 
   // Categories in their own transaction — commits even if products fail later
@@ -155,7 +157,11 @@ async function seedProducts(sequelize, models) {
   await sequelize.transaction(async (t) => {
     for (let i = 0; i < products.length; i++) {
       const p = products[i];
-      const values = colList.map(c => c === 'active' ? 1 : (p[c] ?? null));
+      const values = colList.map(c => {
+        if (c === 'active') return 1;
+        if (c === 'created_at' || c === 'updated_at') return now;
+        return p[c] ?? null;
+      });
       await sequelize.query(prodSql, { bind: values, transaction: t });
       if (i % 1000 === 0) console.log(`[seed] products ${i}/${products.length}`);
     }
@@ -231,6 +237,7 @@ async function startServer() {
         { key: 'invoices',   label: 'Invoices',     path: '/invoices',       group: 'mgmt', sort_order: 2,  icon: 'invoices',   offline_ok: true },
         { key: 'users',      label: 'Users',        path: '/users',          group: 'mgmt', sort_order: 3,  icon: 'users',      offline_ok: true },
         { key: 'settings',   label: 'Settings',     path: '/settings',       group: 'mgmt', sort_order: 4,  icon: 'settings',   offline_ok: true },
+        { key: 'data_import', label: 'Data Import',  path: '/admin/data-import', group: 'mgmt', sort_order: 5, icon: 'upload',    offline_ok: false },
       ];
 
       for (const f of DEFAULT_FEATURES) {
@@ -258,6 +265,9 @@ async function startServer() {
       } else {
         console.log(`[DB] Skipping product seed — ${productCount} products already exist`);
       }
+      // Repair: activate any products seeded with active=0 by older builds
+      const [fixed] = await sequelize.query('UPDATE products SET active = 1 WHERE active = 0 OR active IS NULL');
+      if (fixed?.changes > 0) console.log(`[DB] Activated ${fixed.changes} previously inactive product(s)`);
     } catch (e) { console.error('[DB product seed error]', e.message, e.stack); }
   }
 
