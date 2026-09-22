@@ -245,7 +245,7 @@ export default function AppLayout() {
   const pageTitle = pageTitleKey ? t(pageTitleKey) : 'LMUC POS';
 
   // Items that only admin can see regardless of feature assignment
-  const ADMIN_ONLY = new Set(['data_import', 'role_permissions']);
+  const ADMIN_ONLY = new Set(['data_import']);
   // Items that work offline
   const OFFLINE_OK = new Set(['new_sale', 'sales']);
   // Items that get the POS highlight badge

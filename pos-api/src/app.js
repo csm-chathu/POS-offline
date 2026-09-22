@@ -238,7 +238,8 @@ async function startServer() {
         { key: 'invoices',   label: 'Invoices',     path: '/invoices',       group: 'mgmt', sort_order: 2,  icon: 'invoices',   offline_ok: true },
         { key: 'users',      label: 'Users',        path: '/users',          group: 'mgmt', sort_order: 3,  icon: 'users',      offline_ok: true },
         { key: 'settings',   label: 'Settings',     path: '/settings',       group: 'mgmt', sort_order: 4,  icon: 'settings',   offline_ok: true },
-        { key: 'data_import', label: 'Data Import',  path: '/admin/data-import', group: 'mgmt', sort_order: 5, icon: 'upload',    offline_ok: false },
+        { key: 'data_import',      label: 'Data Import',       path: '/admin/data-import', group: 'mgmt', sort_order: 5, icon: 'upload',    offline_ok: false },
+        { key: 'role_permissions', label: 'Role Permissions',  path: '/settings/roles',    group: 'mgmt', sort_order: 6, icon: 'settings',  offline_ok: true  },
       ];
 
       for (const f of DEFAULT_FEATURES) {
@@ -267,7 +268,7 @@ async function startServer() {
         console.log('[DB] Permission manager created — email: manager  password: 123');
       }
       // Assign settings + users to the manager role (role-level permissions)
-      const allowedFeatures = await Feature.findAll({ where: { key: ['settings', 'users'] } });
+      const allowedFeatures = await Feature.findAll({ where: { key: ['settings', 'users', 'role_permissions'] } });
       if (allowedFeatures.length > 0) {
         await managerRole.setFeatures(allowedFeatures);
         // Also sync direct user-level features for the seeded manager user
