@@ -271,7 +271,7 @@ export default function Login() {
                   key={u.id}
                   onClick={() => selectUser(u)}
                   style={{ transitionDelay: `${80 + i * 70}ms` }}
-                  className={`group flex flex-col items-center p-5 rounded-2xl bg-white/8 backdrop-blur-sm border border-white/15 hover:bg-white/18 hover:border-white/35 hover:scale-[1.04] active:scale-95 transition-all duration-300 cursor-pointer shadow-lg ${entered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}
+                  className={`group flex flex-col items-center p-5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:border-white/40 hover:scale-[1.04] active:scale-95 transition-all duration-300 cursor-pointer shadow-lg ${entered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}
                 >
                   <div className={`w-16 h-16 rounded-full ${c.avatar} flex items-center justify-center text-white text-xl font-bold shadow-lg ring-4 ring-white/10 group-hover:ring-white/30 transition-all mb-3`}>
                     {getInitials(u.name)}
