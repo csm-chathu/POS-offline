@@ -7,7 +7,7 @@ module.exports = {
   win: {
     target: [{ target: 'nsis', arch: ['x64'] }],
     artifactName: '${productName}-Setup-${version}.${ext}',
-    icon: 'build/icon.ico',
+    icon: 'build/icon-new.ico',
   },
   nsis: {
     oneClick: false,
