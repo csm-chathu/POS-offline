@@ -162,6 +162,7 @@ async function seedProducts(sequelize, models) {
     for (let i = 0; i < products.length; i++) {
       const p = products[i];
       const values = colList.map(c => {
+        if (c === 'active') return 0;
         if (c === 'created_at' || c === 'updated_at') return now;
         return p[c] ?? null;
       });
@@ -257,7 +258,7 @@ async function startServer() {
     try {
       const bcrypt = require('bcryptjs');
       const { User, Role, Feature } = models;
-      const [managerRole] = await Role.findOrCreate({ where: { name: 'manager' }, defaults: { name: 'manager' } });
+      const [managerRole] = await Role.findOrCreate({ where: { name: 'setup' }, defaults: { name: 'setup' } });
       const hash = await bcrypt.hash('123', 10);
       let managerUser = await User.findOne({ where: { email: 'manager' } });
       if (!managerUser) {
@@ -265,14 +266,17 @@ async function startServer() {
         await sequelize.query(`INSERT OR IGNORE INTO user_role (user_id, role_id) VALUES (${managerUser.id}, ${managerRole.id})`);
         console.log('[DB] Permission manager created — email: manager  password: 123');
       }
-      // Always sync direct feature access to settings + users only
+      // Assign settings + users to the manager role (role-level permissions)
       const allowedFeatures = await Feature.findAll({ where: { key: ['settings', 'users'] } });
       if (allowedFeatures.length > 0) {
+        await managerRole.setFeatures(allowedFeatures);
+        // Also sync direct user-level features for the seeded manager user
         await sequelize.query(`DELETE FROM user_features WHERE user_id = ${managerUser.id}`);
         for (const f of allowedFeatures) {
           await sequelize.query(`INSERT OR IGNORE INTO user_features (user_id, feature_id) VALUES (${managerUser.id}, ${f.id})`);
         }
       }
+      console.log('[DB] Manager role permissions set — settings + users');
     } catch (e) { console.error('[DB manager seed error]', e.message); }
 
     // Seed products and categories from bundled data.json (first install only)

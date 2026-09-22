@@ -86,7 +86,7 @@ export default function AppLayout() {
   const features       = useSelector(selectFeatures);    // null = admin (all access)
   const storedFeatures = useSelector(selectAllFeatures);
   const isAdmin        = role === 'admin';
-  const isManager      = isAdmin || role === 'manager';
+  const isManager      = isAdmin || role === 'manager' || role === 'setup';
   const canSee         = key => isAdmin || features === null || features.includes(key);
 
   // Fallback: fetch features from API if store is empty (e.g. old cached session)

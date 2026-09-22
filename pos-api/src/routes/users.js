@@ -11,7 +11,9 @@ router.get('/', auth, role('admin', 'manager'), async (req, res) => {
     attributes: { exclude: ['password'] },
     order: [['name', 'ASC']],
   });
-  res.json(users.map(u => ({ ...u.toJSON(), role: u.Roles?.[0]?.name ?? 'cashier' })));
+  const mapped = users.map(u => ({ ...u.toJSON(), role: u.Roles?.[0]?.name ?? 'cashier' }));
+  // Admin is a system account — hidden from user management UI
+  res.json(mapped.filter(u => u.role !== 'admin'));
 });
 
 // POST /api/users
@@ -28,8 +30,9 @@ router.post('/', auth, role('admin', 'manager'), async (req, res) => {
 // PUT /api/users/:id
 router.put('/:id', auth, role('admin', 'manager'), async (req, res) => {
   const { User, Role } = req.models;
-  const user = await User.findByPk(req.params.id);
+  const user = await User.findByPk(req.params.id, { include: [{ model: Role, through: { attributes: [] } }] });
   if (!user) return res.status(404).json({ error: 'Not found' });
+  if (user.Roles?.[0]?.name === 'admin') return res.status(403).json({ error: 'System account cannot be modified' });
   const { role: roleName, password, ...data } = req.body;
   if (password) data.password = await bcrypt.hash(password, 12);
   await user.update(data);
@@ -42,10 +45,11 @@ router.put('/:id', auth, role('admin', 'manager'), async (req, res) => {
 
 // DELETE /api/users/:id
 router.delete('/:id', auth, role('admin'), async (req, res) => {
-  const { User } = req.models;
+  const { User, Role } = req.models;
   if (req.params.id == req.user.id) return res.status(422).json({ error: 'Cannot delete yourself' });
-  const user = await User.findByPk(req.params.id);
+  const user = await User.findByPk(req.params.id, { include: [{ model: Role, through: { attributes: [] } }] });
   if (!user) return res.status(404).json({ error: 'Not found' });
+  if (user.Roles?.[0]?.name === 'admin') return res.status(403).json({ error: 'System account cannot be deleted' });
   await user.destroy();
   res.json({ message: 'Deleted' });
 });
