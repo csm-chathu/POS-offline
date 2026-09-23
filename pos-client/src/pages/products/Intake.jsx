@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import DatePicker from '../../components/DatePicker';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useGetProductsQuery, useUpdateProductMutation, useCreateProductMutation } from '../../features/products/productsApi';
 import { useSelector } from 'react-redux';
@@ -297,13 +298,9 @@ export default function ProductIntake() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1.5">කල් ඉකුත් දිනය</label>
-              <input type="date" value={form.expiry_date}
-                ref={fExpiryRef}
-                onChange={e => setForm(f => ({ ...f, expiry_date: e.target.value }))}
-                onFocus={e => e.target.showPicker?.()}
-                onClick={e => e.target.showPicker?.()}
-                onKeyDown={fNext(fNameSiRef)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+              <DatePicker value={form.expiry_date}
+                onChange={d => setForm(f => ({ ...f, expiry_date: d }))}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
             </div>
           </div>
 

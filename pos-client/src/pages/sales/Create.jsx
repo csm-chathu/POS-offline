@@ -40,7 +40,7 @@ const Icon = {
   credit: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>,
   split: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4M4 17h12m0 0l-4-4m4 4l-4 4"/></svg>,
   print: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6v-8z"/></svg>,
-  pause: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6"/></svg>,
+  pause: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-3.5L5 21V5z"/></svg>,
   save: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>,
   user: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z"/></svg>,
   lightning: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
@@ -1144,7 +1144,7 @@ export default function SalesCreate() {
       )}
 
       {/* ── Top header bar ── */}
-      <div className="bg-slate-900 border-b border-slate-700 px-3 h-12 flex items-center justify-between shrink-0 gap-2">
+      <div className="bg-slate-900 dark:bg-black border-b border-slate-700 dark:border-[#222] px-3 h-12 flex items-center justify-between shrink-0 gap-2">
         <div className="flex items-center gap-2 shrink-0">
           <button onClick={() => navigate('/sales')} className="text-slate-400 hover:text-white transition-colors">{Icon.back}</button>
           <button onClick={() => navigate('/dashboard')} title="Home" className="text-slate-400 hover:text-white transition-colors">{Icon.home}</button>
@@ -1608,13 +1608,13 @@ export default function SalesCreate() {
 
 
           {/* Complete Sale */}
-          <div className="px-4 py-4 mt-auto sticky bottom-0 bg-white border-t border-slate-300 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+          <div className="px-4 py-4 mt-auto sticky bottom-0 bg-white dark:bg-[#1a1a1a] border-t border-slate-300 dark:border-[#333] shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
             <div className="flex gap-2 mb-2">
               {/* Main button */}
               <button
                 disabled={cart.length === 0 || total === 0 || submitting}
                 onClick={() => handleCompleteSale(false, true)}
-                className="flex-1 flex items-center justify-center gap-2 py-4 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 text-white rounded-xl font-bold text-sm transition-colors shadow-lg ring-1 ring-blue-300/60"
+                className="flex-1 flex items-center justify-center gap-2 py-4 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-500 text-white rounded-xl font-bold text-sm transition-colors shadow-lg ring-1 ring-blue-300/60 dark:ring-blue-500/40"
               >
                 {Icon.print}
                 <span>{t('pos.complete_sale')}</span>
@@ -1625,7 +1625,7 @@ export default function SalesCreate() {
               <button
                 disabled={cart.length === 0 || total === 0 || submitting}
                 onClick={() => handleCompleteSale(true)}
-                className="flex flex-col items-center justify-center gap-0.5 px-3 py-2 border-2 border-slate-300 hover:border-slate-400 disabled:opacity-40 text-slate-600 rounded-xl text-xs font-semibold transition-colors shadow-md"
+                className="flex flex-col items-center justify-center gap-0.5 px-3 py-2 border-2 border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-400 disabled:opacity-40 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors shadow-md"
               >
                 {Icon.save}
                 <span>{t('btn.save')}</span>
@@ -1638,14 +1638,22 @@ export default function SalesCreate() {
             <button
               disabled={cart.length === 0}
               onClick={() => setHoldModal(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-amber-400 hover:bg-amber-500 disabled:bg-amber-100 disabled:text-amber-400 disabled:cursor-not-allowed text-amber-900 rounded-xl font-bold text-sm transition-colors shadow-lg ring-1 ring-amber-300/60"
+              className="flex-1 flex items-center justify-center gap-2 py-4
+                bg-amber-400 hover:bg-amber-500 text-amber-900
+                dark:bg-transparent dark:border-2 dark:border-amber-400 dark:text-amber-300 dark:hover:bg-amber-400/10
+                disabled:opacity-40 disabled:cursor-not-allowed
+                rounded-xl font-bold text-sm transition-colors shadow-lg"
             >
               {Icon.pause} {t('pos.hold_btn')}
             </button>
             <button
               disabled={cart.length === 0}
               onClick={() => { setCart([]); setCustomer(null); setCustQuery(''); setBillDisc(''); refocus(); }}
-              className="flex items-center justify-center gap-1.5 px-4 py-3 bg-red-100 hover:bg-red-200 disabled:opacity-40 disabled:cursor-not-allowed text-red-700 rounded-xl font-bold text-sm transition-colors shadow-md border border-red-200"
+              className="flex items-center justify-center gap-1.5 px-4 py-3
+                bg-red-100 hover:bg-red-200 text-red-700 border border-red-200
+                dark:bg-transparent dark:border dark:border-red-500/60 dark:text-red-400 dark:hover:bg-red-500/10
+                disabled:opacity-40 disabled:cursor-not-allowed
+                rounded-xl font-bold text-sm transition-colors shadow-md"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
               Clear

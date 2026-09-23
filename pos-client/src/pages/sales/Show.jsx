@@ -36,7 +36,7 @@ export default function SaleShow() {
   const [returnModal,  setReturnModal]  = useState(false);
   const [returnReason, setReturnReason] = useState('');
   const [returnItems,  setReturnItems]  = useState([]);
-  const [paperSize,    setPaperSize]    = useState('80mm');
+  const [paperSize,    setPaperSize]    = useState('72mm');
   const [shopInfo,     setShopInfo]     = useState({});
   const [printing,     setPrinting]     = useState(false);
 
@@ -77,7 +77,7 @@ export default function SaleShow() {
   async function handlePrint() {
     if (!sale || printing) return;
     setPrinting(true);
-    const is80 = paperSize === '80mm';
+    const is80 = paperSize === '72mm';
     const currency = shopInfo.currency || 'Rs.';
     const receiptLang = shopInfo.receipt_language || 'en';
     const isSinhala = receiptLang === 'si';
@@ -126,8 +126,8 @@ export default function SaleShow() {
       font-family: ${isSinhala ? "'Noto Sans Sinhala', sans-serif" : "'Courier New', Courier, monospace"};
       font-size: ${is80 ? '13px' : '15px'};
       font-weight: 900;
-      width: ${is80 ? '80mm' : '210mm'};
-      max-width: ${is80 ? '80mm' : '210mm'};
+      width: ${is80 ? '72mm' : '210mm'};
+      max-width: ${is80 ? '72mm' : '210mm'};
       color: #000;
       word-break: break-word;
       overflow-wrap: break-word;
@@ -159,8 +159,8 @@ export default function SaleShow() {
     .footer { text-align:center; margin-top:10px; font-size:${is80 ? '12px' : '14px'}; color:#000; font-weight:900; line-height:1.8; word-break:break-word; }
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
-      @page { margin: 0; size: ${is80 ? '80mm auto' : 'A4'}; }
-      body { padding: ${is80 ? '3mm 4mm' : '10mm'}; width: ${is80 ? '80mm' : '210mm'} !important; }
+      @page { margin: 0; size: ${is80 ? '72mm auto' : 'A4'}; }
+      body { padding: ${is80 ? '3mm 4mm' : '10mm'}; width: ${is80 ? '72mm' : '210mm'} !important; }
     }
   </style>
 </head>
@@ -260,9 +260,9 @@ export default function SaleShow() {
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Paper size toggle */}
           <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs font-semibold">
-            <button onClick={() => setPaperSize('80mm')}
-              className={`px-2 py-1.5 transition-colors ${paperSize === '80mm' ? 'bg-slate-700 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-              80mm
+            <button onClick={() => setPaperSize('72mm')}
+              className={`px-2 py-1.5 transition-colors ${paperSize === '72mm' ? 'bg-slate-700 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
+              72mm
             </button>
             <button onClick={() => setPaperSize('A4')}
               className={`px-2 py-1.5 transition-colors border-l border-slate-200 ${paperSize === 'A4' ? 'bg-slate-700 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>

@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import { useLoginMutation } from '../features/auth/authApi';
 import { setCredentials } from '../features/auth/authSlice';
 import { getApiUrl } from '../config/runtimeConfig';
+import { useTheme } from '../contexts/ThemeContext';
 
 const API = getApiUrl();
 const OFFLINE_KEY = 'pos_offline_creds';
@@ -53,6 +54,7 @@ export default function Login() {
   const passwordRef = useRef();
   const emailRef    = useRef();
   const [login, { isLoading }] = useLoginMutation();
+  const { theme, setTheme } = useTheme();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -244,7 +246,19 @@ export default function Login() {
 
   /* ── User tile selection phase ─────────────────────────── */
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-10">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-10 relative">
+      {/* Theme toggle */}
+      <button
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        className="absolute top-4 right-4 p-2 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+        title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      >
+        {theme === 'dark' ? (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" strokeWidth={2}/><path strokeLinecap="round" strokeWidth={2} d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        ) : (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        )}
+      </button>
       {/* Header */}
       <div className={`flex flex-col items-center mb-8 transition-all duration-700 ${entered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-3'}`}>
         <LogoAvatar appInfo={appInfo} />

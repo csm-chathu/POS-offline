@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import DatePicker from '../DatePicker';
 import { useForm } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 import { selectToken } from '../../features/auth/authSlice';
@@ -420,7 +421,7 @@ export default function ProductForm({ initial = {}, onSubmit, isSaving }) {
 
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-1.5">{t('prod.expiry_date')}</label>
-              <input type="date" {...register('expiry_date')} className={inp} />
+              <DatePicker value={watch('expiry_date')} onChange={d => setValue('expiry_date', d)} className={inp} />
             </div>
 
             {/* Promotional Price */}
@@ -436,12 +437,12 @@ export default function ProductForm({ initial = {}, onSubmit, isSaving }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-orange-600 mb-1.5">{t('prod.promo_start')}</label>
-                  <input type="date" {...register('promo_start_date')}
+                  <DatePicker value={watch('promo_start_date')} onChange={d => setValue('promo_start_date', d)}
                     className="w-full rounded-lg border border-orange-300 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 transition" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-orange-600 mb-1.5">{t('prod.promo_end')}</label>
-                  <input type="date" {...register('promo_end_date')}
+                  <DatePicker value={watch('promo_end_date')} onChange={d => setValue('promo_end_date', d)}
                     className="w-full rounded-lg border border-orange-300 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 transition" />
                 </div>
               </div>

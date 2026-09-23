@@ -6,7 +6,7 @@ const role   = require('../middleware/role');
 // Public — no auth needed (login page uses this)
 router.get('/public', async (req, res) => {
   const { Setting } = req.models;
-  const PUBLIC_KEYS = new Set(['shop_name', 'shop_logo', 'address', 'phone', 'receipt_footer', 'currency', 'interface_language', 'receipt_language', 'default_login_email']);
+  const PUBLIC_KEYS = new Set(['shop_name', 'shop_logo', 'address', 'phone', 'receipt_footer', 'currency', 'interface_language', 'receipt_language', 'default_login_email', 'sidebar_theme', 'primary_color']);
   const rows = await Setting.findAll();
   const result = {};
   rows.forEach(s => { if (PUBLIC_KEYS.has(s.key)) result[s.key] = s.value; });

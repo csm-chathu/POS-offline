@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import DatePicker from '../../components/DatePicker';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGetSalesQuery, useDeleteSaleMutation } from '../../features/sales/salesApi';
 import { useSelector } from 'react-redux';
@@ -133,8 +134,8 @@ export default function SalesIndex() {
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1">{t('th.date')}</label>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+          <DatePicker value={date} onChange={setDate}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
         </div>
         <button type="submit" className="px-4 py-2 bg-slate-800 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 transition-colors">
           {t('btn.search')}

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import DatePicker from '../../components/DatePicker';
 import { useNavigate } from 'react-router-dom';
 import { useCreatePurchaseMutation } from '../../features/purchases/purchasesApi';
 import { useGetSuppliersQuery } from '../../features/suppliers/suppliersApi';
@@ -110,8 +111,8 @@ export default function PurchaseCreate() {
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1">{t('th.date')}</label>
-          <input type="date" value={form.purchase_date} onChange={set('purchase_date')}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+          <DatePicker value={form.purchase_date} onChange={d => setForm(p => ({ ...p, purchase_date: d }))}
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1">{t('th.status')}</label>

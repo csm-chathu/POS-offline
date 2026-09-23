@@ -57,6 +57,7 @@ const inputCls = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm ou
 const SIDEBAR_THEMES = [
   { value: 'slate',  color: '#1e293b', label: 'Slate' },
   { value: 'black',  color: '#111111', label: 'Black' },
+  { value: 'navy',   color: '#1a3058', label: 'Navy' },
   { value: 'green',  color: '#14532d', label: 'Forest' },
   { value: 'teal',   color: '#134e4a', label: 'Teal' },
   { value: 'purple', color: '#3b0764', label: 'Purple' },

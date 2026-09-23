@@ -294,6 +294,9 @@ export default function AppLayout() {
 
   const dark = theme === 'dark';
 
+  const SIDEBAR_COLORS = { slate: '#1e293b', black: '#111111', navy: '#1a3058', green: '#14532d', teal: '#134e4a', purple: '#3b0764', coffee: '#292018' };
+  const sidebarBg = SIDEBAR_COLORS[layoutSettings?.sidebar_theme || shopInfo.sidebar_theme] || '#141414';
+
   function navCls(isActive) {
     const base = `flex items-center py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap overflow-hidden
       ${displayCollapsed ? 'justify-center px-0 w-10 mx-auto' : 'gap-3 px-3'}`;
@@ -315,7 +318,7 @@ export default function AppLayout() {
 
   return (
     <DailyConnectionGate>
-    <div style={{ ...zoomStyle, ...(theme === 'dark' ? { backgroundColor: '#1c1c1c' } : {}) }} className="flex h-screen bg-slate-100 overflow-hidden">
+    <div style={{ ...zoomStyle, ...(theme === 'dark' ? { backgroundColor: '#1c1c1c' } : {}) }} className="flex h-screen bg-slate-200 overflow-hidden">
 
       {/* ── Mobile overlay backdrop ─────────────────────────────────────── */}
       {mobileOpen && (
@@ -334,7 +337,7 @@ export default function AppLayout() {
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
           md:static md:translate-x-0 md:z-auto md:inset-y-auto md:left-auto
           ${collapsed ? 'md:w-[62px]' : 'md:w-56'}
-          border-r border-[#2a2a2a]`} style={{ backgroundColor: '#141414' }}>
+          border-r border-[#2a2a2a]`} style={{ backgroundColor: sidebarBg }}>
 
         {/* Brand / Logo */}
         <div className={`shrink-0 flex items-center transition-all duration-300
@@ -472,7 +475,7 @@ export default function AppLayout() {
           onMouseLeave={() => setSidebarHover(false)}
           className="fixed inset-y-0 left-0 w-56 flex flex-col select-none border-r border-[#2a2a2a] shadow-2xl shadow-black/70 z-[99999]"
           style={{
-            backgroundColor: '#141414',
+            backgroundColor: sidebarBg,
             transform: sidebarHover ? 'translateX(0)' : 'translateX(-100%)',
             transition: 'transform 220ms cubic-bezier(0.4,0,0.2,1)',
             pointerEvents: sidebarHover ? 'auto' : 'none',
@@ -576,7 +579,7 @@ export default function AppLayout() {
 
         {/* Top header */}
         {!hideHeader && (
-          <header style={theme === 'dark' ? { backgroundColor: '#141414', borderColor: '#2a2a2a' } : {}} className="print:hidden h-14 bg-white border-b border-slate-200 flex items-center justify-between px-3 md:px-6 shrink-0 shadow-sm">
+          <header style={theme === 'dark' ? { backgroundColor: sidebarBg, borderColor: '#2a2a2a' } : {}} className="print:hidden h-14 bg-white border-b border-slate-200 flex items-center justify-between px-3 md:px-6 shrink-0 shadow-sm">
             <div className="flex items-center gap-2 md:gap-3">
               {/* Hamburger — mobile only */}
               <button

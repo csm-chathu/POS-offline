@@ -1,5 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import DatePicker from '../../components/DatePicker';
 import { useLocale } from '../../contexts/LocaleContext';
+import { getApiUrl } from '../../config/runtimeConfig';
+
+const API = getApiUrl();
 import {
   useGetReportTodayQuery,
   useGetReportDayEndQuery,
@@ -19,6 +23,120 @@ const fmtDate = s => s ? new Date(s + (s.length === 10 ? 'T00:00:00' : '')).toLo
 const todayStr   = () => new Date().toISOString().slice(0, 10);
 const monthStr   = () => new Date().toISOString().slice(0, 7);
 const monthStart = () => new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+
+// ─── Print helpers ────────────────────────────────────────────────────────────
+const PRINT_CSS = `
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Courier New',monospace;font-size:10px;width:72mm;padding:3mm 4mm}
+  .shop{font-size:13px;font-weight:900;text-align:center;margin-bottom:1mm}
+  .sub{text-align:center;font-size:9px;color:#555;margin-bottom:0.5mm}
+  .title{font-size:11px;font-weight:bold;text-align:center;margin:2mm 0 1mm;text-transform:uppercase;letter-spacing:1px}
+  .dash{border-top:1px dashed #000;margin:1.5mm 0}
+  .solid{border-top:1px solid #000;margin:1.5mm 0}
+  .row{display:flex;justify-content:space-between;padding:0.4mm 0;font-size:10px}
+  .row.bold{font-weight:bold}
+  .row.big{font-size:12px;font-weight:900}
+  .sect{font-weight:bold;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin:2mm 0 0.5mm;color:#333}
+  table{width:100%}
+  td{padding:0.3mm 0;font-size:9px;vertical-align:top}
+  td.r{text-align:right}
+  td.inv{font-family:'Courier New',monospace;color:#333}
+  .footer{text-align:center;font-size:9px;color:#666;margin-top:3mm}
+`;
+
+function wrapHtml(body, shopName) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${PRINT_CSS}</style></head><body>${body}</body></html>`;
+}
+
+function buildDayHtml(date, summary, byPayment, sales, shopName) {
+  const rows = sales.map(s => `
+    <tr>
+      <td class="inv">${s.invoice_no}</td>
+      <td class="r">${Number(s.total||0).toFixed(2)}</td>
+      <td class="r" style="color:${parseFloat(s.balance)>0?'#c00':'#333'}">${parseFloat(s.balance)>0?Number(s.balance).toFixed(2):'—'}</td>
+    </tr>`).join('');
+
+  const methods = byPayment.map(r => `
+    <div class="row"><span style="text-transform:capitalize">${r.method} (${r.count})</span><span>${Number(r.total||0).toFixed(2)}</span></div>
+  `).join('');
+
+  return wrapHtml(`
+    <div class="shop">${shopName || 'LMUC POS'}</div>
+    <div class="title">Daily Income Report</div>
+    <div class="sub">${fmtDate(date)}</div>
+    <div class="dash"></div>
+    <div class="row bold"><span>Total Bills</span><span>${summary.total_bills ?? 0}</span></div>
+    <div class="row bold big"><span>Revenue</span><span>${Number(summary.total_revenue||0).toFixed(2)}</span></div>
+    <div class="row"><span>Discount</span><span>${Number(summary.total_discount||0).toFixed(2)}</span></div>
+    <div class="row" style="${parseFloat(summary.total_balance)>0?'color:#c00':''}"><span>Credit Balance</span><span>${Number(summary.total_balance||0).toFixed(2)}</span></div>
+    <div class="solid"></div>
+    <div class="sect">By Payment Method</div>
+    ${methods || '<div style="color:#999;font-size:9px">No sales</div>'}
+    ${sales.length > 0 ? `
+      <div class="solid"></div>
+      <div class="sect">Invoices (${sales.length})</div>
+      <table><tbody>${rows}</tbody></table>
+    ` : ''}
+    <div class="dash"></div>
+    <div class="footer">Printed ${new Date().toLocaleString('en-LK')}</div>
+  `, shopName);
+}
+
+function buildMonthlyHtml(month, summary, byDay, shopName) {
+  const rows = byDay.map(r => `
+    <tr>
+      <td>${fmtDate(r.date)}</td>
+      <td class="r">${r.count}</td>
+      <td class="r">${Number(r.total||0).toFixed(2)}</td>
+    </tr>`).join('');
+  const totBills = byDay.reduce((a,r)=>a+Number(r.count),0);
+  const avgDaily = byDay.length ? parseFloat(summary.total_revenue)/byDay.length : 0;
+
+  return wrapHtml(`
+    <div class="shop">${shopName || 'LMUC POS'}</div>
+    <div class="title">Monthly Report</div>
+    <div class="sub">${month}</div>
+    <div class="dash"></div>
+    <div class="row bold big"><span>Revenue</span><span>${Number(summary.total_revenue||0).toFixed(2)}</span></div>
+    <div class="row"><span>Total Bills</span><span>${summary.total_sales ?? 0}</span></div>
+    <div class="row"><span>Avg / Day</span><span>${avgDaily.toFixed(2)}</span></div>
+    <div class="solid"></div>
+    <div class="sect">Daily Breakdown</div>
+    <table>
+      <thead><tr><td style="font-weight:bold">Date</td><td class="r" style="font-weight:bold">Bills</td><td class="r" style="font-weight:bold">Revenue</td></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot style="border-top:1px solid #000;font-weight:bold">
+        <tr><td>Total</td><td class="r">${totBills}</td><td class="r">${Number(summary.total_revenue||0).toFixed(2)}</td></tr>
+      </tfoot>
+    </table>
+    <div class="dash"></div>
+    <div class="footer">Printed ${new Date().toLocaleString('en-LK')}</div>
+  `, shopName);
+}
+
+async function printThermal(html) {
+  if (window.electronAPI?.printReceiptHtml) {
+    const r = await window.electronAPI.printReceiptHtml(html, { paperSize: '72mm' });
+    if (!r?.success) alert(r?.error || 'Print failed');
+  } else {
+    const w = window.open('', '_blank', 'width=400,height=600');
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => { w.print(); w.close(); }, 400);
+  }
+}
+
+function PrintBtn({ onClick, disabled }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors disabled:opacity-40 print:hidden">
+      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6v-8z"/>
+      </svg>
+      Print
+    </button>
+  );
+}
 
 function Spin() {
   return (
@@ -44,11 +162,11 @@ function SummaryCard({ label, value, sub, color }) {
 function DateRange({ from, to, onFrom, onTo }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <input type="date" value={from} onChange={e => onFrom(e.target.value)}
-        className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <DatePicker value={from} onChange={onFrom}
+        className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
       <span className="text-slate-400 text-sm">to</span>
-      <input type="date" value={to} onChange={e => onTo(e.target.value)}
-        className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <DatePicker value={to} onChange={onTo}
+        className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
     </div>
   );
 }
@@ -68,7 +186,7 @@ function Th({ children, right }) {
 }
 
 // ─── Tab: Today's Sales ────────────────────────────────────────────────────────
-function SalesToday() {
+function SalesToday({ shopName }) {
   const { t } = useLocale();
   const [date, setDate] = useState(todayStr());
   const { data, isLoading } = useGetReportDayEndQuery(date);
@@ -78,8 +196,8 @@ function SalesToday() {
     <div className="space-y-4">
       {/* Date picker */}
       <div className="flex items-center gap-3 flex-wrap">
-        <input type="date" value={date} max={todayStr()} onChange={e => setDate(e.target.value)}
-          className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <DatePicker value={date} onChange={setDate} max={todayStr()}
+          className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
         {!isToday && (
           <button onClick={() => setDate(todayStr())}
             className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
@@ -89,6 +207,8 @@ function SalesToday() {
         {!isToday && (
           <span className="text-xs text-slate-400">{fmtDate(date)}</span>
         )}
+        <PrintBtn disabled={isLoading || !sales.length && !summary.total_bills}
+          onClick={() => printThermal(buildDayHtml(date, summary, byPayment, sales, shopName))} />
       </div>
 
       {isLoading ? <Spin /> : (
@@ -144,15 +264,19 @@ function SalesToday() {
 }
 
 // ─── Tab: Day End ──────────────────────────────────────────────────────────────
-function DayEnd() {
+function DayEnd({ shopName }) {
   const { t } = useLocale();
   const [date, setDate] = useState(todayStr());
   const { data, isLoading } = useGetReportDayEndQuery(date);
   const { summary = {}, byPayment = [], sales = [] } = data || {};
   return (
     <div className="space-y-4">
-      <input type="date" value={date} onChange={e => setDate(e.target.value)}
-        className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <div className="flex items-center gap-3 flex-wrap">
+        <DatePicker value={date} onChange={setDate}
+          className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+        <PrintBtn disabled={isLoading || !summary.total_bills}
+          onClick={() => printThermal(buildDayHtml(date, summary, byPayment, sales, shopName))} />
+      </div>
 
       {isLoading ? <Spin /> : (
         <>
@@ -207,7 +331,7 @@ function DayEnd() {
 }
 
 // ─── Tab: Monthly Summary ──────────────────────────────────────────────────────
-function Monthly() {
+function Monthly({ shopName }) {
   const { t } = useLocale();
   const [month, setMonth] = useState(monthStr());
   const { data, isLoading } = useGetReportMonthlyQuery(month);
@@ -215,8 +339,12 @@ function Monthly() {
   const avgDaily = byDay.length ? parseFloat(summary.total_revenue) / byDay.length : 0;
   return (
     <div className="space-y-4">
-      <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-        className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <div className="flex items-center gap-3 flex-wrap">
+        <input type="month" value={month} onChange={e => setMonth(e.target.value)}
+          className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+        <PrintBtn disabled={isLoading || !byDay.length}
+          onClick={() => printThermal(buildMonthlyHtml(month, summary, byDay, shopName))} />
+      </div>
 
       {isLoading ? <Spin /> : (
         <>
@@ -727,6 +855,10 @@ const TAB_ICONS = {
 export default function Reports() {
   const { t } = useLocale();
   const [tab, setTab] = useState('today');
+  const [shopName, setShopName] = useState('');
+  useEffect(() => {
+    fetch(`${API}/api/settings/public`).then(r => r.json()).then(d => setShopName(d.shop_name || '')).catch(() => {});
+  }, []);
 
   const TABS = [
     { id: 'today',    label: t('rep.today') },
@@ -779,9 +911,9 @@ export default function Reports() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-6">
-        {tab === 'today'    && <SalesToday />}
-        {tab === 'dayend'   && <DayEnd />}
-        {tab === 'monthly'  && <Monthly />}
+        {tab === 'today'    && <SalesToday shopName={shopName} />}
+        {tab === 'dayend'   && <DayEnd shopName={shopName} />}
+        {tab === 'monthly'  && <Monthly shopName={shopName} />}
         {tab === 'revenue'  && <Revenue />}
         {tab === 'profit'   && <Profit />}
         {tab === 'top'      && <TopProducts />}
