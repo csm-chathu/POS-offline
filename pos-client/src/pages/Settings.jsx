@@ -98,6 +98,12 @@ export default function Settings() {
   const [saved, setSaved]   = useState(false);
   const [backing, setBacking] = useState(false);
   const [seedState, setSeedState] = useState(null); // null | 'running' | {ok,categories,products,total_in_db} | {error}
+  const [toast, setToast]   = useState(null); // { msg, type: 'success'|'error' }
+
+  function showToast(msg, type = 'error') {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  }
   const logoInputRef        = useRef(null);
   const { setLocale, t }    = useLocale();
   const token               = useSelector(selectToken);
@@ -129,8 +135,9 @@ export default function Settings() {
       a.download = name;
       a.click();
       URL.revokeObjectURL(a.href);
+      showToast('Backup downloaded successfully', 'success');
     } catch (e) {
-      alert(e.message);
+      showToast(e.message, 'error');
     } finally {
       setBacking(false);
     }
@@ -185,7 +192,7 @@ export default function Settings() {
   function handleLogoUpload(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { alert('Max 2 MB'); return; }
+    if (file.size > 2 * 1024 * 1024) { showToast('Logo must be under 2 MB', 'error'); return; }
     const reader = new FileReader();
     reader.onload = ev => set('shop_logo', ev.target.result);
     reader.readAsDataURL(file);
@@ -194,6 +201,20 @@ export default function Settings() {
   if (isLoading) return <div className="p-8 text-slate-400 text-sm">{t('lbl.loading')}</div>;
 
   return (
+    <>
+    {/* Toast notification */}
+    {toast && (
+      <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-medium animate-[fadeSlideUp_0.3s_ease-out] ${
+        toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+      }`}>
+        {toast.type === 'success'
+          ? <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+          : <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+        }
+        {toast.msg}
+        <button onClick={() => setToast(null)} className="ml-1 opacity-70 hover:opacity-100 text-lg leading-none">&times;</button>
+      </div>
+    )}
     <form onSubmit={handleSubmit} className="p-3 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-slate-800">{t('page.settings')}</h1>
@@ -582,5 +603,6 @@ export default function Settings() {
         </div>
       )}
     </form>
+    </>
   );
 }
