@@ -98,19 +98,76 @@ let splashOpen = false;
 function createSplashWindow() {
   const html = encodeURIComponent(`<!DOCTYPE html><html><head><style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{background:#1a1a2e;width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',Arial,sans-serif}
-    .brand{font-size:52px;font-weight:800;letter-spacing:2px;line-height:1}
-    .lu{color:#ffffff}.mac{color:#2563eb}
-    .sub{margin-top:14px;font-size:15px;color:#94a3b8;letter-spacing:4px;text-transform:uppercase}
-    .info{margin-top:28px;font-size:13px;color:#64748b;text-align:center;line-height:1.8;letter-spacing:1px}
+    body{
+      background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0f172a 100%);
+      width:100vw;height:100vh;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      font-family:'Segoe UI',Arial,sans-serif;overflow:hidden;
+    }
+    /* Animated background orbs */
+    .orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:0.18;animation:drift 6s ease-in-out infinite alternate}
+    .orb1{width:220px;height:220px;background:#6366f1;top:-40px;left:-40px;animation-delay:0s}
+    .orb2{width:180px;height:180px;background:#f97316;bottom:-30px;right:-30px;animation-delay:1.5s}
+    .orb3{width:140px;height:140px;background:#3b82f6;bottom:20px;left:30px;animation-delay:3s}
+    @keyframes drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(20px,15px) scale(1.1)}}
+
+    /* Main card */
+    .card{
+      position:relative;z-index:1;
+      display:flex;flex-direction:column;align-items:center;
+      animation:slideUp 0.6s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes slideUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+
+    /* Logo ring */
+    .ring{
+      width:72px;height:72px;border-radius:20px;
+      background:linear-gradient(135deg,#6366f1,#3b82f6);
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 0 32px rgba(99,102,241,0.5);
+      margin-bottom:20px;
+      animation:pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse{0%,100%{box-shadow:0 0 32px rgba(99,102,241,0.5)}50%{box-shadow:0 0 48px rgba(99,102,241,0.8)}}
+    .ring-inner{font-size:28px;font-weight:900;color:#fff;letter-spacing:-1px}
+
+    /* Brand text */
+    .brand{font-size:42px;font-weight:800;letter-spacing:1px;line-height:1;animation:fadeIn 0.5s 0.3s both}
+    .lu{color:#ffffff}.mac{
+      background:linear-gradient(90deg,#6366f1,#3b82f6);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    }
+    .sub{margin-top:8px;font-size:11px;color:#64748b;letter-spacing:5px;text-transform:uppercase;animation:fadeIn 0.5s 0.5s both}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+    /* Divider */
+    .divider{width:40px;height:2px;background:linear-gradient(90deg,#6366f1,#3b82f6);margin:18px auto;border-radius:2px;animation:expand 0.6s 0.6s both}
+    @keyframes expand{from{width:0;opacity:0}to{width:40px;opacity:1}}
+
+    /* Info */
+    .info{font-size:12px;color:#475569;text-align:center;line-height:2;letter-spacing:0.5px;animation:fadeIn 0.5s 0.8s both}
+    .info a{color:#6366f1}
+
+    /* Loading bar */
+    .bar-wrap{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:120px;height:2px;background:#1e293b;border-radius:2px;overflow:hidden}
+    .bar{height:100%;background:linear-gradient(90deg,#6366f1,#f97316);border-radius:2px;animation:load 2s ease-in-out forwards}
+    @keyframes load{0%{width:0}60%{width:70%}85%{width:88%}100%{width:100%}}
   </style></head><body>
-    <div class="brand"><span class="lu">LU</span><span class="mac">MAC</span></div>
-    <div class="sub">Solutions</div>
-    <div class="info">lumac.lk<br>076 464 3050</div>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+    <div class="card">
+      <div class="ring"><div class="ring-inner">L</div></div>
+      <div class="brand"><span class="lu">LU</span><span class="mac">MAC</span></div>
+      <div class="sub">Solutions</div>
+      <div class="divider"></div>
+      <div class="info">lumac.lk &nbsp;·&nbsp; 076 464 3050</div>
+    </div>
+    <div class="bar-wrap"><div class="bar"></div></div>
   </body></html>`);
 
   const splash = new BrowserWindow({
-    width: 420, height: 260,
+    width: 420, height: 320,
     frame: false, resizable: false, center: true,
     show: false, skipTaskbar: true, alwaysOnTop: true,
     webPreferences: { contextIsolation: true },
