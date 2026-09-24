@@ -61,4 +61,4 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "${{ github.ref_name }}" --draft=false --repo csm-chathu/POS-offline || true
+        run: gh release edit "${{ github.ref_name }}" --draft=false --latest --repo csm-chathu/POS-offline || true
