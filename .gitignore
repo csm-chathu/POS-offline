@@ -26,3 +26,4 @@ nodemon-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+license-server/
