@@ -429,15 +429,6 @@ export default function AppLayout() {
               })}
             </>
           )}
-          {/* Extensions — always visible */}
-          <NavLink to="/extensions"
-            title={displayCollapsed ? 'Extensions' : undefined}
-            onClick={() => { setMobileOpen(false); expandSidebar(); }}
-            className={({ isActive }) => navCls(isActive)}
-          >
-            {Icons.extensions}
-            {!displayCollapsed && <span className="flex-1 truncate">Extensions</span>}
-          </NavLink>
           {extState?.accounting?.enabled && (
             <NavLink to="/accounting"
               title={displayCollapsed ? 'Accounting' : undefined}
@@ -559,12 +550,6 @@ export default function AppLayout() {
                 })}
               </>
             )}
-            {/* Extensions — always visible */}
-            <NavLink to="/extensions" onClick={() => setSidebarHover(false)}
-              className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
-                ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
-              {Icons.extensions}<span className="flex-1 truncate">Extensions</span>
-            </NavLink>
             {extState?.accounting?.enabled && (
               <NavLink to="/accounting" onClick={() => setSidebarHover(false)}
                 className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
