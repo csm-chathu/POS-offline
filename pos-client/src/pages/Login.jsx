@@ -9,6 +9,17 @@ import { useTheme } from '../contexts/ThemeContext';
 const API = getApiUrl();
 const OFFLINE_KEY = 'pos_offline_creds';
 
+function getHomeRoute(auth) {
+  const features = auth?.user?.features ?? null; // null = admin
+  if (features === null || features.includes('pos')) return '/sales/create';
+  if (features.includes('users'))            return '/users';
+  if (features.includes('reports'))          return '/reports';
+  if (features.includes('products'))         return '/products';
+  if (features.includes('role_permissions')) return '/settings/roles';
+  if (features.includes('settings'))         return '/settings';
+  return '/sales/create'; // fallback
+}
+
 const ROLE_COLORS = {
   setup:   { avatar: 'bg-purple-600', badge: 'bg-purple-100 text-purple-700', btn: 'from-purple-600 to-purple-800', ring: 'ring-purple-400/50' },
   manager: { avatar: 'bg-indigo-600', badge: 'bg-indigo-100 text-indigo-700', btn: 'from-indigo-600 to-indigo-800', ring: 'ring-indigo-400/50' },
@@ -101,7 +112,7 @@ export default function Login() {
         const hash = await hashCreds(email, pwd);
         saveOfflineCreds(hash, res, appInfo);
         dispatch(setCredentials(res));
-        navigate('/sales/create');
+        navigate(getHomeRoute(res));
         return;
       } catch (err) {
         const isNetworkError = err?.status === 'FETCH_ERROR' || err?.status === 'PARSING_ERROR';
@@ -114,7 +125,7 @@ export default function Login() {
       const hash = await hashCreds(email, pwd);
       if (hash !== stored.hash) { setError('Incorrect password'); return; }
       dispatch(setCredentials(stored.auth));
-      navigate('/sales/create');
+      navigate(getHomeRoute(stored.auth));
     } catch { setError('Login failed'); }
   }
 
