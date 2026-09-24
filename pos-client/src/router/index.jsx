@@ -41,6 +41,7 @@ import InvoiceCreate    from '../pages/invoices/Create';
 import InvoiceShow      from '../pages/invoices/Show';
 import Extensions       from '../pages/Extensions';
 import Accounting       from '../pages/Accounting';
+import Help             from '../pages/Help';
 
 function ProtectedRoute() {
   const token = useSelector(selectToken);
@@ -128,6 +129,7 @@ export const router = createAppRouter([
         { path: 'suppliers',            element: <SuppliersIndex /> },
         { path: 'categories',           element: <CategoriesIndex /> },
         { path: 'extensions',           element: <Extensions /> },
+        { path: 'help',                 element: <Help /> },
         { element: <AccountingRoute />, children: [{ path: 'accounting', element: <Accounting /> }] },
         {
           element: <AdminRoute />,
