@@ -174,6 +174,205 @@ function ProductDemo() {
   );
 }
 
+// ─── Animated Stock Intake Demo ──────────────────────────────────────────────
+const INTAKE_STEPS = [
+  { id: 'click',   label: 'Click "Stock Intake"',    hint: 'Top-right of the Products page' },
+  { id: 'search',  label: 'Search product',          hint: 'Type product name to find it',   field: 'Search Product', value: 'Coca Cola' },
+  { id: 'select',  label: 'Select product',          hint: 'Click the product from results' },
+  { id: 'qty',     label: 'Enter quantity received', hint: 'How many units arrived',          field: 'Qty Received',   value: '50' },
+  { id: 'cost',    label: 'Enter cost price',        hint: 'Price you paid per unit',         field: 'Cost Price',     value: '220.00' },
+  { id: 'add',     label: 'Click "Add to Intake"',  hint: 'Adds the row to the intake list' },
+  { id: 'save',    label: 'Click "Save Intake"',    hint: 'Stock is updated!' },
+];
+
+function StockIntakeDemo() {
+  const [step, setStep]     = useState(0);
+  const [done, setDone]     = useState(false);
+  const [playing, setPlaying] = useState(true);
+  const timerRef = useRef(null);
+
+  const current = INTAKE_STEPS[step];
+  const formValues = { 'Search Product': '', 'Qty Received': '', 'Cost Price': '' };
+  INTAKE_STEPS.forEach((s, i) => {
+    if (s.field && i < step) formValues[s.field] = s.value;
+    if (s.field && i === step) formValues[s.field] = '';
+  });
+
+  const typedVal = useTyping(current?.value, playing && !!current?.field);
+  const displayValues = { ...formValues };
+  if (current?.field) displayValues[current.field] = typedVal;
+
+  const formOpen   = step >= 1;
+  const selected   = step >= 3;
+  const rowAdded   = step >= 6;
+  const saved      = done;
+
+  useEffect(() => {
+    if (!playing) return;
+    const delay = current?.field ? (current.value.length * 60 + 800) : 1200;
+    timerRef.current = setTimeout(() => {
+      if (step < INTAKE_STEPS.length - 1) setStep(s => s + 1);
+      else { setDone(true); setPlaying(false); }
+    }, delay);
+    return () => clearTimeout(timerRef.current);
+  }, [step, playing]);
+
+  function replay() { setStep(0); setDone(false); setPlaying(true); }
+  function prev()   { setStep(s => Math.max(0, s - 1)); setDone(false); setPlaying(false); }
+  function next()   { if (step < INTAKE_STEPS.length - 1) setStep(s => s + 1); }
+
+  return (
+    <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden select-none">
+      {/* Mock browser chrome */}
+      <div className="bg-slate-200 px-4 py-2 flex items-center gap-2">
+        <span className="w-3 h-3 rounded-full bg-red-400" />
+        <span className="w-3 h-3 rounded-full bg-yellow-400" />
+        <span className="w-3 h-3 rounded-full bg-green-400" />
+        <span className="ml-3 flex-1 bg-white rounded-md px-3 py-1 text-xs text-slate-400 font-mono">LMUC POS — Stock Intake</span>
+      </div>
+
+      <div className="relative bg-white min-h-[320px] p-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-slate-800 text-sm">Products</h3>
+          <div className="flex gap-2">
+            <button className={`px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all duration-300
+              ${step === 0 ? 'bg-blue-500 ring-4 ring-blue-200 scale-105' : 'bg-blue-500'}`}>
+              Stock Intake
+            </button>
+            <button className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-orange-500">+ Add Product</button>
+          </div>
+        </div>
+
+        {/* Product list */}
+        <div className="space-y-1.5 mb-3">
+          {[
+            { name: 'Coca Cola 330ml', stock: rowAdded ? 150 : 100 },
+            { name: 'Sprite 330ml',    stock: 80 },
+            { name: 'Water 500ml',     stock: 200 },
+          ].map(p => (
+            <div key={p.name} className={`flex items-center justify-between px-3 py-2 rounded-lg border transition-all duration-500
+              ${p.name === 'Coca Cola 330ml' && rowAdded ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-100'}`}>
+              <span className="text-xs text-slate-600">{p.name}</span>
+              <span className={`text-xs font-semibold transition-colors duration-500 ${p.name === 'Coca Cola 330ml' && rowAdded ? 'text-green-600' : 'text-slate-700'}`}>
+                {p.stock} units
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Intake modal */}
+        {formOpen && (
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center p-4"
+            style={{ animation: 'fadeIn 0.2s ease' }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+              style={{ animation: 'slideUp 0.25s ease' }}>
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <span className="font-bold text-slate-800 text-sm">Stock Intake</span>
+                <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs">✕</span>
+              </div>
+              <div className="p-5 space-y-3">
+                {/* Search field */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Search Product</label>
+                  <div className={`border rounded-lg px-3 py-2 text-sm font-mono transition-all duration-200
+                    ${current?.field === 'Search Product' ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'}`}>
+                    {displayValues['Search Product'] || <span className="text-slate-300">—</span>}
+                    {current?.field === 'Search Product' && (
+                      <span className="inline-block w-0.5 h-4 bg-blue-500 ml-0.5 animate-pulse align-middle" />
+                    )}
+                  </div>
+                  {/* Dropdown result */}
+                  {step >= 2 && !selected && (
+                    <div className="mt-1 border border-slate-200 rounded-lg bg-white shadow-md overflow-hidden"
+                      style={{ animation: 'fadeIn 0.2s ease' }}>
+                      <div className={`px-3 py-2 text-xs font-medium transition-colors
+                        ${step === 2 ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' : 'text-slate-700 hover:bg-slate-50'}`}>
+                        Coca Cola 330ml — 100 units
+                      </div>
+                    </div>
+                  )}
+                  {selected && (
+                    <div className="mt-1 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs font-semibold text-blue-700"
+                      style={{ animation: 'fadeIn 0.2s ease' }}>
+                      ✓ Coca Cola 330ml
+                    </div>
+                  )}
+                </div>
+
+                {selected && (
+                  <>
+                    {['Qty Received', 'Cost Price'].map(f => (
+                      <div key={f}>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">{f}</label>
+                        <div className={`border rounded-lg px-3 py-2 text-sm font-mono transition-all duration-200
+                          ${current?.field === f ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'}`}>
+                          {displayValues[f] || <span className="text-slate-300">—</span>}
+                          {current?.field === f && (
+                            <span className="inline-block w-0.5 h-4 bg-blue-500 ml-0.5 animate-pulse align-middle" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <button className={`flex-1 py-2 rounded-xl text-xs font-semibold text-white transition-all duration-300
+                        ${step === 5 ? 'bg-blue-500 ring-4 ring-blue-200 scale-105' : 'bg-blue-400'}`}>
+                        Add to Intake
+                      </button>
+                      <button className={`flex-1 py-2 rounded-xl text-xs font-semibold text-white transition-all duration-300
+                        ${step === 6 || done ? 'bg-green-500 ring-4 ring-green-200 scale-105' : 'bg-slate-300 text-slate-500'}`}
+                        disabled={step < 6}>
+                        Save Intake
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success toast */}
+        {saved && (
+          <div className="absolute top-4 right-4 flex items-center gap-2 bg-green-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg"
+            style={{ animation: 'slideDown 0.3s ease' }}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
+            </svg>
+            Stock updated! +50 units added.
+          </div>
+        )}
+      </div>
+
+      {/* Step indicator */}
+      <div className="bg-slate-50 border-t border-slate-200 px-4 py-3">
+        <div className="flex items-center gap-1 mb-2">
+          {INTAKE_STEPS.map((s, i) => (
+            <div key={i} className={`flex-1 h-1 rounded-full transition-all duration-500
+              ${i < step ? 'bg-blue-500' : i === step ? 'bg-blue-300' : 'bg-slate-200'}`} />
+          ))}
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-slate-700">
+              Step {step + 1}/{INTAKE_STEPS.length}: {current?.label}
+            </p>
+            <p className="text-xs text-slate-400">{current?.hint}</p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button onClick={prev} disabled={step === 0}
+              className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-200 hover:bg-slate-300 text-slate-600 disabled:opacity-30 transition-colors">‹</button>
+            <button onClick={done ? replay : next}
+              className="px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white transition-colors">
+              {done ? '↺ Replay' : '›'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const SECTIONS = [
   {
     id: 'getting-started',
@@ -256,6 +455,7 @@ Optional: Cost Price (used for profit reports and opening balance), Barcode, Cat
       },
       {
         title: 'Stock Intake (Receiving Stock)',
+        demo: 'stock-intake',
         body: `Go to Products → Stock Intake to record new stock arriving.
 
 1. Select the product.
@@ -568,7 +768,8 @@ export default function Help() {
                       {isOpen && (
                         <div className={`px-5 pb-5 border-t text-sm leading-relaxed whitespace-pre-line
                           ${dark ? 'border-[#2a2a2a] text-slate-300' : 'border-slate-100 text-slate-600'}`}>
-                          {art.demo === 'add-product' && <ProductDemo />}
+                          {art.demo === 'add-product'   && <ProductDemo />}
+                          {art.demo === 'stock-intake'  && <StockIntakeDemo />}
                           <div className="pt-4">{art.body}</div>
                         </div>
                       )}
