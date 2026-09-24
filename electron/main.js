@@ -145,7 +145,7 @@ function createSplashWindow() {
     @keyframes expand{from{width:0;opacity:0}to{width:40px;opacity:1}}
 
     /* Info */
-    .info{font-size:12px;color:#475569;text-align:center;line-height:2;letter-spacing:0.5px;animation:fadeIn 0.5s 0.8s both}
+    .info{font-size:15px;color:#64748b;text-align:center;line-height:2;letter-spacing:0.5px;animation:fadeIn 0.5s 0.8s both}
     .info a{color:#6366f1}
 
     /* Loading bar */
@@ -167,7 +167,7 @@ function createSplashWindow() {
   </body></html>`);
 
   const splash = new BrowserWindow({
-    width: 420, height: 320,
+    width: 520, height: 280,
     frame: false, resizable: false, center: true,
     show: false, skipTaskbar: true, alwaysOnTop: true,
     webPreferences: { contextIsolation: true },

@@ -353,7 +353,7 @@ function LogoAvatar({ appInfo }) {
 
 function StatusBadge({ isOffline }) {
   return (
-    <div className="mt-8">
+    <div className="mt-8 flex flex-col items-center gap-2">
       {isOffline ? (
         <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />Offline Mode
