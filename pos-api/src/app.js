@@ -44,6 +44,8 @@ app.use('/api/imagekit',       require('./routes/imagekit'));
 app.use('/api/notifications',  require('./routes/notifications'));
 app.use('/api/tenants',        require('./routes/tenants'));
 app.use('/api/scale',          require('./routes/scale'));
+app.use('/api/extensions',     require('./routes/extensions'));
+app.use('/api/accounting',     require('./routes/accounting'));
 
 // Wrap all async route handlers so thrown errors flow to the error handler
 function wrapAsync(router) {
@@ -240,6 +242,7 @@ async function startServer() {
         { key: 'settings',   label: 'Settings',     path: '/settings',       group: 'mgmt', sort_order: 4,  icon: 'settings',   offline_ok: true },
         { key: 'data_import',      label: 'Data Import',       path: '/admin/data-import', group: 'mgmt', sort_order: 5, icon: 'upload',    offline_ok: false },
         { key: 'role_permissions', label: 'Role Permissions',  path: '/settings/roles',    group: 'mgmt', sort_order: 6, icon: 'settings',  offline_ok: true  },
+        { key: 'extensions',       label: 'Extensions',        path: '/extensions',         group: 'mgmt', sort_order: 7, icon: 'extensions', offline_ok: true  },
       ];
 
       for (const f of DEFAULT_FEATURES) {

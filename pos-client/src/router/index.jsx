@@ -1,6 +1,7 @@
 import { createBrowserRouter, createHashRouter, Navigate, Outlet } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { selectToken, selectRole, selectFeatures } from '../features/auth/authSlice';
+import { useGetExtensionsQuery } from '../features/extensions/extensionsApi';
 import AppLayout      from '../layouts/AppLayout';
 import CashierLayout  from '../layouts/CashierLayout';
 import GuestLayout    from '../layouts/GuestLayout';
@@ -38,6 +39,8 @@ import ScalePage        from '../pages/Scale';
 import InvoicesIndex    from '../pages/invoices/Index';
 import InvoiceCreate    from '../pages/invoices/Create';
 import InvoiceShow      from '../pages/invoices/Show';
+import Extensions       from '../pages/Extensions';
+import Accounting       from '../pages/Accounting';
 
 function ProtectedRoute() {
   const token = useSelector(selectToken);
@@ -49,7 +52,7 @@ function POSRoute() {
   return iface === '3' ? <SalesCreate3 /> : iface === '2' ? <SalesCreate2 /> : <SalesCreate />;
 }
 
-const MGMT_FEATURES = ['reports', 'users', 'settings', 'data_import', 'role_permissions', 'invoices'];
+const MGMT_FEATURES = ['reports', 'users', 'settings', 'data_import', 'role_permissions', 'invoices', 'extensions'];
 
 function RoleLayout() {
   const role = useSelector(selectRole);
@@ -76,6 +79,11 @@ function FeatureRoute({ feature }) {
 function AdminOnlyRoute() {
   const role = useSelector(selectRole);
   return role === 'admin' ? <Outlet /> : <Navigate to="/dashboard" replace />;
+}
+
+function AccountingRoute() {
+  const { data: extState = {} } = useGetExtensionsQuery();
+  return extState?.accounting?.enabled ? <Outlet /> : <Navigate to="/extensions" replace />;
 }
 
 // Electron's packaged renderer loads index.html via the `file://` protocol,
@@ -119,6 +127,8 @@ export const router = createAppRouter([
         { path: 'purchases/:id',        element: <PurchasesShow /> },
         { path: 'suppliers',            element: <SuppliersIndex /> },
         { path: 'categories',           element: <CategoriesIndex /> },
+        { path: 'extensions',           element: <Extensions /> },
+        { element: <AccountingRoute />, children: [{ path: 'accounting', element: <Accounting /> }] },
         {
           element: <AdminRoute />,
           children: [

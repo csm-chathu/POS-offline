@@ -18,6 +18,7 @@ import DailyConnectionGate from '../components/DailyConnectionGate';
 import { api } from '../app/baseApi';
 import { getApiUrl } from '../config/runtimeConfig';
 import { useGetFeaturesQuery } from '../features/roles/rolesApi';
+import { useGetExtensionsQuery } from '../features/extensions/extensionsApi';
 
 const settingsApi = api.injectEndpoints({
   endpoints: b => ({
@@ -45,6 +46,8 @@ const Icons = {
   credit:    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" strokeWidth={2}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 10h20M6 15h4"/></svg>,
   reports:   <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 0-2 2h-2a2 2 0 0 1-2-2z"/></svg>,
   scale:     <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l9-3 9 3M3 6v12l9 3 9-3V6M12 3v18M3 12h18"/></svg>,
+  extensions: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z"/></svg>,
+  accounting: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 13h.01M13 13h.01M17 13h.01M17 9h.01M13 9h.01M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>,
   logout:    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"/></svg>,
   bell:      <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11a6.002 6.002 0 0 0-4-5.659V5a2 2 0 1 0-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9"/></svg>,
   chevronsRight: <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M6 5l7 7-7 7"/></svg>,
@@ -94,6 +97,7 @@ export default function AppLayout() {
     skip: storedFeatures.length > 0 || !token,
   });
   const allFeatures = storedFeatures.length > 0 ? storedFeatures : (fetchedFeatures || []);
+  const { data: extState = {} } = useGetExtensionsQuery(undefined, { skip: !token });
   const { t } = useLocale();
 
   // Refresh user features from server on every app load
@@ -270,7 +274,7 @@ export default function AppLayout() {
     .map(featureToNav);
 
   const mgmtNav = allFeatures
-    .filter(f => f.group === 'mgmt' && canSee(f.key) && (!ADMIN_ONLY.has(f.key) || role === 'admin'))
+    .filter(f => f.group === 'mgmt' && (f.key === 'extensions' || canSee(f.key)) && (!ADMIN_ONLY.has(f.key) || role === 'admin'))
     .map(featureToNav);
 
   function toggleCollapse() {
@@ -425,6 +429,26 @@ export default function AppLayout() {
               })}
             </>
           )}
+          {/* Extensions — always visible */}
+          <NavLink to="/extensions"
+            title={displayCollapsed ? 'Extensions' : undefined}
+            onClick={() => { setMobileOpen(false); expandSidebar(); }}
+            className={({ isActive }) => navCls(isActive)}
+          >
+            {Icons.extensions}
+            {!displayCollapsed && <span className="flex-1 truncate">Extensions</span>}
+          </NavLink>
+          {extState?.accounting?.enabled && (
+            <NavLink to="/accounting"
+              title={displayCollapsed ? 'Accounting' : undefined}
+              onClick={() => { setMobileOpen(false); expandSidebar(); }}
+              className={({ isActive }) => navCls(isActive)}
+            >
+              {Icons.accounting}
+              {!displayCollapsed && <span className="flex-1 truncate">Accounting</span>}
+            </NavLink>
+          )}
+
           {/* Scale + Provision Tenant — super-admin only */}
           {isAdmin && (
             <NavLink to="/settings/scale"
@@ -535,6 +559,20 @@ export default function AppLayout() {
                 })}
               </>
             )}
+            {/* Extensions — always visible */}
+            <NavLink to="/extensions" onClick={() => setSidebarHover(false)}
+              className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
+                ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
+              {Icons.extensions}<span className="flex-1 truncate">Extensions</span>
+            </NavLink>
+            {extState?.accounting?.enabled && (
+              <NavLink to="/accounting" onClick={() => setSidebarHover(false)}
+                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
+                  ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
+                {Icons.accounting}<span className="flex-1 truncate">Accounting</span>
+              </NavLink>
+            )}
+
             {isAdmin && (
               <NavLink to="/settings/scale" onClick={() => setSidebarHover(false)}
                 className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap

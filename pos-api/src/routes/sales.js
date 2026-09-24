@@ -3,6 +3,93 @@ const { Op, fn, col, literal } = require('sequelize');
 const auth   = require('../middleware/auth');
 const role   = require('../middleware/role');
 
+let _acctSynced = false;
+async function postSaleJournal(models, sale, payments) {
+  try {
+    const { Extension, JournalEntry, JournalLine, Account } = models;
+    if (!Extension || !JournalEntry || !JournalLine || !Account) return;
+
+    const ext = await Extension.findOne({ where: { key: 'accounting' } });
+    if (!ext || !ext.enabled) return;
+
+    const total = parseFloat(sale.total || 0);
+    if (!total) return;
+
+    // Ensure accounting tables exist (once)
+    if (!_acctSynced) {
+      try {
+        await Account.sync({ force: false });
+        await JournalEntry.sync({ force: false });
+        await JournalLine.sync({ force: false });
+        _acctSynced = true;
+      } catch {}
+    }
+
+    // Build debit lines from payments
+    const debitLines = [];
+    for (const pay of (payments || [])) {
+      const amount = parseFloat(pay.amount || 0);
+      if (!amount) continue;
+      if (pay.method === 'cash')   { debitLines.push({ code: '1000', amount }); }
+      else if (pay.method === 'card')   { debitLines.push({ code: '1100', amount }); }
+      else if (pay.method === 'credit') { debitLines.push({ code: '1200', amount }); }
+      else if (pay.method === 'split') {
+        if (pay.cash_amount) debitLines.push({ code: '1000', amount: parseFloat(pay.cash_amount) });
+        if (pay.card_amount) debitLines.push({ code: '1100', amount: parseFloat(pay.card_amount) });
+      }
+    }
+
+    // Fallback: if no payments passed, debit Cash for full total
+    if (!debitLines.length) debitLines.push({ code: '1000', amount: total });
+
+    // Ensure default accounts exist (seed them if the accounting tab hasn't been opened yet)
+    const DEFAULT_ACCOUNTS = [
+      { code: '1000', name: 'Cash',                type: 'Asset',   description: 'Cash on hand' },
+      { code: '1100', name: 'Bank',                type: 'Asset',   description: 'Bank account' },
+      { code: '1200', name: 'Accounts Receivable', type: 'Asset',   description: 'Money owed by customers' },
+      { code: '1300', name: 'Inventory',           type: 'Asset',   description: 'Stock value' },
+      { code: '2000', name: 'Accounts Payable',    type: 'Liability', description: 'Money owed to suppliers' },
+      { code: '3000', name: "Owner's Equity",      type: 'Equity',  description: 'Owner investment' },
+      { code: '4000', name: 'Sales Revenue',       type: 'Revenue', description: 'Revenue from sales' },
+      { code: '5000', name: 'Cost of Goods Sold',  type: 'Expense', description: 'Cost of sold products' },
+      { code: '6000', name: 'Rent Expense',        type: 'Expense', description: 'Shop rent' },
+      { code: '6100', name: 'Utilities',           type: 'Expense', description: 'Electricity, water, internet' },
+      { code: '6200', name: 'Salaries',            type: 'Expense', description: 'Staff salaries' },
+      { code: '6300', name: 'Miscellaneous',       type: 'Expense', description: 'Other expenses' },
+    ];
+    for (const a of DEFAULT_ACCOUNTS) {
+      await Account.findOrCreate({ where: { code: a.code }, defaults: a });
+    }
+
+    // Resolve accounts by code
+    const codes = [...new Set(['4000', ...debitLines.map(d => d.code)])];
+    const acctRows = await Account.findAll({ where: { code: codes } });
+    const accountMap = Object.fromEntries(acctRows.map(a => [a.code, a]));
+
+    const revenueAccount = accountMap['4000'];
+    if (!revenueAccount) return;
+
+    const entry = await JournalEntry.create({
+      description: `Sale: ${sale.invoice_no}`,
+      reference:   sale.invoice_no,
+      date:        sale.created_at ? new Date(sale.created_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+    });
+
+    // Debit lines (Cash/Bank/AR)
+    for (const d of debitLines) {
+      const acct = accountMap[d.code];
+      if (!acct) continue;
+      await JournalLine.create({ entry_id: entry.id, account_id: acct.id, debit: d.amount, credit: 0 });
+    }
+
+    // Credit line (Sales Revenue 4000)
+    await JournalLine.create({ entry_id: entry.id, account_id: revenueAccount.id, debit: 0, credit: total });
+
+  } catch (err) {
+    console.error('[postSaleJournal] Non-fatal error:', err.message);
+  }
+}
+
 function nextInvoiceNo(sequelize) {
   const d = new Date();
   const ds = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
@@ -111,6 +198,10 @@ router.post('/', auth, async (req, res) => {
       { model: Payment,  as: 'payments' },
     ],
   });
+
+  // Post journal entries if accounting extension is enabled (non-blocking)
+  await postSaleJournal(req.models, sale, payments);
+
   res.status(201).json(created);
 });
 

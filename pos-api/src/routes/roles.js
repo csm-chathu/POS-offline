@@ -19,6 +19,7 @@ const DEFAULT_FEATURES = [
   { key: 'settings',         label: 'Settings',         path: '/settings',           group: 'mgmt', sort_order: 14, icon: 'settings',   offline_ok: false },
   { key: 'data_import',      label: 'Data Import',      path: '/admin/data-import',  group: 'mgmt', sort_order: 15, icon: 'upload',     offline_ok: false },
   { key: 'role_permissions', label: 'Role Permissions', path: '/settings/roles',     group: 'mgmt', sort_order: 16, icon: 'users',      offline_ok: false },
+  { key: 'extensions',      label: 'Extensions',       path: '/extensions',          group: 'mgmt', sort_order: 17, icon: 'extensions', offline_ok: true  },
 ];
 
 async function ensureFeatures(Feature) {

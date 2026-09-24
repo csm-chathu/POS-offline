@@ -173,6 +173,15 @@ function getModels(sequelize) {
     value: { type: DataTypes.TEXT('long'), allowNull: true },
   }, { tableName: 'settings' });
 
+  const Extension = sequelize.define('Extension', {
+    id:           { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
+    key:          { type: DataTypes.STRING(100), allowNull: false, unique: true },
+    enabled:      { type: DataTypes.BOOLEAN, defaultValue: false },
+    config:       { type: DataTypes.TEXT('long'), allowNull: true }, // JSON string
+    license_key:  { type: DataTypes.STRING(191), allowNull: true },
+    activated_at: { type: DataTypes.DATE, allowNull: true },
+  }, { tableName: 'extensions' });
+
   const Feature = sequelize.define('Feature', {
     id:         { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
     key:        { type: DataTypes.STRING(191), allowNull: false, unique: true },
@@ -183,6 +192,31 @@ function getModels(sequelize) {
     icon:       { type: DataTypes.STRING(32), allowNull: true },
     offline_ok: { type: DataTypes.BOOLEAN, defaultValue: false },
   }, { tableName: 'features', timestamps: false });
+
+  const Account = sequelize.define('Account', {
+    id:          { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
+    code:        { type: DataTypes.STRING(20), allowNull: false, unique: true },
+    name:        { type: DataTypes.STRING(191), allowNull: false },
+    type:        { type: DataTypes.ENUM('Asset','Liability','Equity','Revenue','Expense'), allowNull: false },
+    description: { type: DataTypes.STRING(255), allowNull: true },
+    active:      { type: DataTypes.BOOLEAN, defaultValue: true },
+  }, { tableName: 'accounts' });
+
+  const JournalEntry = sequelize.define('JournalEntry', {
+    id:          { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
+    date:        { type: DataTypes.DATEONLY, allowNull: false },
+    description: { type: DataTypes.STRING(255), allowNull: false },
+    reference:   { type: DataTypes.STRING(100), allowNull: true },
+  }, { tableName: 'journal_entries' });
+
+  const JournalLine = sequelize.define('JournalLine', {
+    id:         { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
+    entry_id:   { type: DataTypes.BIGINT.UNSIGNED, allowNull: false },
+    account_id: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false },
+    debit:      { type: DataTypes.DECIMAL(14, 2), defaultValue: 0 },
+    credit:     { type: DataTypes.DECIMAL(14, 2), defaultValue: 0 },
+    memo:       { type: DataTypes.STRING(255), allowNull: true },
+  }, { tableName: 'journal_lines', timestamps: false });
 
   // ── Associations ────────────────────────────────────────────────────────────
   User.belongsToMany(Role, { through: 'user_role', foreignKey: 'user_id', otherKey: 'role_id', timestamps: false });
@@ -213,10 +247,16 @@ function getModels(sequelize) {
   User.belongsToMany(Feature, { through: 'user_features', foreignKey: 'user_id', otherKey: 'feature_id', as: 'DirectFeatures', timestamps: false });
   Feature.belongsToMany(User, { through: 'user_features', foreignKey: 'feature_id', otherKey: 'user_id', as: 'DirectUsers', timestamps: false });
 
+  JournalEntry.hasMany(JournalLine, { foreignKey: 'entry_id', as: 'lines' });
+  JournalLine.belongsTo(JournalEntry, { foreignKey: 'entry_id', as: 'entry' });
+  JournalLine.belongsTo(Account, { foreignKey: 'account_id', as: 'account' });
+  Account.hasMany(JournalLine, { foreignKey: 'account_id', as: 'lines' });
+
   return {
     User, Role, Category, Product, ProductVariant,
     Supplier, Customer, Sale, SaleItem, Payment, SaleReturn,
-    Purchase, PurchaseItem, StockMovement, CreditPayment, Setting, Feature,
+    Purchase, PurchaseItem, StockMovement, CreditPayment, Setting, Feature, Extension,
+    Account, JournalEntry, JournalLine,
   };
 }
 

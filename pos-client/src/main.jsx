@@ -8,6 +8,7 @@ import { LocaleProvider } from './contexts/LocaleContext';
 import { ConnectivityProvider } from './contexts/ConnectivityContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import UpdateBanner from './components/UpdateBanner';
+import LicenseGate  from './components/LicenseGate';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -16,8 +17,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <LocaleProvider>
           <ConnectivityProvider>
-            <RouterProvider router={router} />
-            <UpdateBanner />
+            <LicenseGate>
+              <RouterProvider router={router} />
+              <UpdateBanner />
+            </LicenseGate>
           </ConnectivityProvider>
         </LocaleProvider>
       </ThemeProvider>

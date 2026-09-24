@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectCurrentUser, selectRole, selectToken } from '../../features/auth/authSlice';
 import { useCreateSaleMutation, useReturnSaleMutation } from '../../features/sales/salesApi';
+import { useGetExtensionsQuery, useSendSmsReceiptMutation } from '../../features/extensions/extensionsApi';
 import useProductCache from '../../hooks/useProductCache';
 import { useConnectivity } from '../../contexts/ConnectivityContext';
 import { enqueueOfflineSale, getPendingCount, OFFLINE_LIMIT } from '../../services/offlineQueue';
@@ -616,6 +617,11 @@ export default function SalesCreate() {
   const [showReturn, setShowReturn] = useState(false);
   const [returnInvoiceNo, setReturnInvoiceNo] = useState('');
   const [returnSaleId, setReturnSaleId] = useState(null);
+
+  // SMS receipt extension
+  const { data: extState = {} } = useGetExtensionsQuery(undefined, { skip: !isOnline });
+  const [sendSms] = useSendSmsReceiptMutation();
+  const [smsPending, setSmsPending] = useState(null); // { saleId, phone, message }
   const [returnSaleData, setReturnSaleData] = useState(null);
   const [returnItemQtys, setReturnItemQtys] = useState({});
   const [returnLoading, setReturnLoading] = useState(false);
@@ -1025,14 +1031,30 @@ export default function SalesCreate() {
       cart.forEach(item => { if (item.product_id) deductStock(item.product_id, item.qty); });
       invalidate();
 
+      const cartSnapshot = cart.map(i => ({ name: i.name, qty: i.qty, unit_price: i.unit_price, discount: i.discount || 0, total: i.total }));
       setCart([]); setCustomer(null); setCustQuery(''); setBillDisc(''); setCashPaid('');
+
+      const smsEnabled = extState?.sms_receipt?.enabled;
+      const custPhone  = customer?.phone;
+      if (!saveOnly && smsEnabled && custPhone && result?.id) {
+        const tmpl = (extState?.sms_receipt?.config && typeof extState.sms_receipt.config === 'object')
+          ? extState.sms_receipt.config.template || '' : '';
+        const msg = (tmpl || 'Your bill {invoice} is Rs.{total}. Thank you!')
+          .replace('{customer}', customer?.name || '')
+          .replace('{invoice}',  result.invoice_no || '')
+          .replace('{total}',    Number(total).toFixed(2))
+          .replace('{shop}',     settings?.shop_name || '');
+        setSmsPending({ saleId: result.id, autoPrint: !!redirectAndPrint, phone: custPhone, message: msg, cartSnapshot, payments, subtotal, totalDisc, total, paid, customerName: customer?.name, result });
+        return;
+      }
+
       if (!saveOnly) {
         if (redirectAndPrint && result?.id) {
           navigate('/sales/' + result.id, { state: { autoPrint: true } });
         } else {
           setReceipt({
             ...result,
-            items: cart.map(i => ({ name: i.name, qty: i.qty, unit_price: i.unit_price, discount: i.discount || 0, total: i.total })),
+            items: cartSnapshot,
             payments,
             subtotal, discount: totalDisc, total, paid, customer_name: customer?.name,
           });
@@ -1782,6 +1804,47 @@ export default function SalesCreate() {
                   </button>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SMS receipt modal */}
+      {smsPending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="px-5 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">📱</span>
+                <h2 className="font-bold text-slate-800">Send SMS Receipt?</h2>
+              </div>
+            </div>
+            <div className="p-5 space-y-3">
+              <p className="text-sm text-slate-600">Send receipt to <span className="font-semibold text-slate-800">{smsPending.phone}</span></p>
+              <div className="bg-slate-50 rounded-lg p-3 text-xs text-slate-500 font-mono whitespace-pre-wrap break-all">{smsPending.message}</div>
+            </div>
+            <div className="flex gap-2 px-5 pb-5">
+              <button
+                onClick={() => {
+                  const p = smsPending;
+                  setSmsPending(null);
+                  if (p.autoPrint) navigate('/sales/' + p.saleId, { state: { autoPrint: true } });
+                  else setReceipt({ ...p.result, items: p.cartSnapshot, payments: p.payments, subtotal: p.subtotal, discount: p.totalDisc, total: p.total, paid: p.paid, customer_name: p.customerName });
+                }}
+                className="flex-1 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+                Skip
+              </button>
+              <button
+                onClick={async () => {
+                  const p = smsPending;
+                  setSmsPending(null);
+                  try { await sendSms({ phone: p.phone, message: p.message }); } catch (_) {}
+                  if (p.autoPrint) navigate('/sales/' + p.saleId, { state: { autoPrint: true } });
+                  else setReceipt({ ...p.result, items: p.cartSnapshot, payments: p.payments, subtotal: p.subtotal, discount: p.totalDisc, total: p.total, paid: p.paid, customer_name: p.customerName });
+                }}
+                className="flex-1 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                Send SMS
+              </button>
             </div>
           </div>
         </div>

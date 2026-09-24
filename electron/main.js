@@ -296,6 +296,13 @@ function getActiveWebContents(sender) {
 
 ipcMain.handle('app:is-electron', () => true);
 
+ipcMain.handle('app:get-machine-id', () => {
+  const os     = require('os');
+  const crypto = require('crypto');
+  const raw    = [os.hostname(), (os.cpus()[0]?.model || ''), os.platform(), os.arch()].join('|');
+  return 'MID-' + crypto.createHash('sha256').update(raw).digest('hex').slice(0, 8).toUpperCase();
+});
+
 ipcMain.handle('app:get-info', () => ({
   appName: app.getName(),
   appVersion: app.getVersion(),

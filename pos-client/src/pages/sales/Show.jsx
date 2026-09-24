@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useGetSaleQuery, useReturnSaleMutation } from '../../features/sales/salesApi';
+import { useGetExtensionsQuery, useGetExtensionConfigQuery, useSendSmsReceiptMutation } from '../../features/extensions/extensionsApi';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser, selectRole } from '../../features/auth/authSlice';
 import { useLocale } from '../../contexts/LocaleContext';
@@ -38,6 +39,17 @@ export default function SaleShow() {
   const [returnItems,  setReturnItems]  = useState([]);
   const [paperSize,    setPaperSize]    = useState('72mm');
   const [shopInfo,     setShopInfo]     = useState({});
+  const [receiptDark,  setReceiptDark]  = useState(false);
+  const [smsModal,     setSmsModal]     = useState(false);
+  const [smsSent,      setSmsSent]      = useState(false);
+  const [smsSending,   setSmsSending]   = useState(false);
+
+  const { data: extState = {} }    = useGetExtensionsQuery();
+  const { data: smsCfg = {} }      = useGetExtensionConfigQuery('sms_receipt', { skip: !extState?.sms_receipt?.enabled });
+  const [sendSms]                  = useSendSmsReceiptMutation();
+
+  const smsEnabled   = extState?.sms_receipt?.enabled;
+  const custPhone    = sale?.customer?.phone;
   const [printing,     setPrinting]     = useState(false);
 
   const autoPrintFiredRef = useRef(false);
@@ -258,6 +270,17 @@ export default function SaleShow() {
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* Receipt dark mode toggle */}
+          <button onClick={() => setReceiptDark(d => !d)}
+            title={receiptDark ? 'Switch to light receipt' : 'Switch to dark receipt'}
+            className={`relative w-10 h-5 rounded-full transition-colors duration-300 shrink-0
+              ${receiptDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+            <span className={`absolute top-0.5 w-4 h-4 rounded-full shadow transition-transform duration-300 flex items-center justify-center text-[8px]
+              ${receiptDark ? 'translate-x-5 bg-slate-900 text-slate-400' : 'translate-x-0.5 bg-white text-yellow-500'}`}>
+              {receiptDark ? '🌙' : '☀'}
+            </span>
+          </button>
+
           {/* Paper size toggle */}
           <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs font-semibold">
             <button onClick={() => setPaperSize('72mm')}
@@ -305,19 +328,75 @@ export default function SaleShow() {
         </div>
       </header>
 
-      {/* ── Print button ────────────────────────────────────────────────── */}
-      <button onClick={handlePrint} disabled={printing}
-        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-20 flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/40">
-        {printing ? IcoSpinner : IcoPrint}
-        <span>{printing ? t('lbl.loading') : t('btn.print')}</span>
-      </button>
+      {/* ── Floating action buttons ──────────────────────────────────────── */}
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-20 flex flex-col items-end gap-2">
+        {/* SMS button — only when extension enabled + customer has phone */}
+        {smsEnabled && custPhone && (
+          <button onClick={() => setSmsModal(true)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-full font-semibold text-sm transition-all shadow-lg
+              ${smsSent ? 'bg-green-500 shadow-green-500/40 text-white' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/40 text-white'}`}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+            <span>{smsSent ? 'SMS Sent' : 'Send SMS'}</span>
+          </button>
+        )}
+        <button onClick={handlePrint} disabled={printing}
+          className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/40">
+          {printing ? IcoSpinner : IcoPrint}
+          <span>{printing ? t('lbl.loading') : t('btn.print')}</span>
+        </button>
+      </div>
+
+      {/* ── SMS modal ───────────────────────────────────────────────────── */}
+      {smsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 py-4 flex items-center gap-3">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+              <div>
+                <h2 className="font-bold text-white">Send SMS Receipt</h2>
+                <p className="text-white/70 text-xs">{custPhone}</p>
+              </div>
+            </div>
+            <div className="p-5">
+              <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 font-mono whitespace-pre-wrap break-all mb-4">
+                {(smsCfg.template || 'Your bill {invoice} is Rs.{total}. Thank you!')
+                  .replace('{customer}', sale?.customer?.name || '')
+                  .replace('{invoice}',  sale?.invoice_no || '')
+                  .replace('{total}',    Number(sale?.total || 0).toFixed(2))
+                  .replace('{shop}',     shopInfo?.shop_name || '')}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setSmsModal(false)}
+                  className="flex-1 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                  Cancel
+                </button>
+                <button disabled={smsSending} onClick={async () => {
+                    setSmsSending(true);
+                    const msg = (smsCfg.template || 'Your bill {invoice} is Rs.{total}. Thank you!')
+                      .replace('{customer}', sale?.customer?.name || '')
+                      .replace('{invoice}',  sale?.invoice_no || '')
+                      .replace('{total}',    Number(sale?.total || 0).toFixed(2))
+                      .replace('{shop}',     shopInfo?.shop_name || '');
+                    try { await sendSms({ phone: custPhone, message: msg }); setSmsSent(true); } catch {}
+                    setSmsSending(false);
+                    setSmsModal(false);
+                  }}
+                  className="flex-1 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors disabled:opacity-60">
+                  {smsSending ? 'Sending…' : 'Send'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Scrollable receipt area ──────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto py-6 sm:py-8 px-3 sm:px-4 flex flex-col items-center pb-20">
 
         {/* Receipt card */}
         <div id="receipt"
-          className="bg-white rounded-2xl shadow-md border border-slate-100 w-full max-w-sm px-8 py-7"
+          className={`rounded-2xl shadow-md w-full max-w-sm px-8 py-7 transition-colors duration-300
+            ${receiptDark ? 'bg-[#1e1e1e] border border-slate-700 text-slate-100' : 'bg-white border border-slate-100 text-black'}`}
           style={{ fontFamily: "'Outfit', 'Noto Sans Sinhala', sans-serif" }}>
 
           {/* Shop header */}
@@ -330,14 +409,14 @@ export default function SaleShow() {
                 {(shopInfo.shop_name || 'L')[0]}
               </div>
             )}
-            <p className="font-black text-black text-xl tracking-wide uppercase">
+            <p className="font-black text-black dark:text-slate-100dark:text-white text-xl tracking-wide uppercase">
               {shopInfo.shop_name || 'LMUC POS'}
             </p>
-            {shopInfo.address && <p className="text-black text-sm font-medium mt-0.5">{shopInfo.address}</p>}
-            {shopInfo.phone   && <p className="text-black text-sm font-medium">{shopInfo.phone}</p>}
+            {shopInfo.address && <p className="text-black dark:text-slate-300 text-sm font-medium mt-0.5">{shopInfo.address}</p>}
+            {shopInfo.phone   && <p className="text-black dark:text-slate-300 text-sm font-medium">{shopInfo.phone}</p>}
           </div>
 
-          <hr className="border-slate-200 mb-4" />
+          <hr className="border-slate-200 dark:border-slate-700 mb-4" />
 
           {/* Invoice meta */}
           <div className="space-y-1.5">
@@ -347,11 +426,11 @@ export default function SaleShow() {
             {sale.customer?.name && <MetaRow label={t('lbl.customer')} value={sale.customer.name} />}
           </div>
 
-          <hr className="border-slate-200 my-4" />
+          <hr className="border-slate-200 dark:border-slate-700 my-4" />
 
           {/* Items */}
           <div className="mb-3 min-w-0">
-            <div className="grid grid-cols-[40px_1fr_1fr_1fr] gap-2 pl-1 text-sm font-black text-black border-b-2 border-slate-200 pb-2 mb-3 text-right min-w-0">
+            <div className="grid grid-cols-[40px_1fr_1fr_1fr] gap-2 pl-1 text-sm font-black text-black dark:text-slate-100dark:text-slate-100 border-b-2 border-slate-200 dark:border-slate-600 pb-2 mb-3 text-right min-w-0">
               <span className="text-left">{rl('th.qty')}</span>
               <span className="text-right whitespace-nowrap">{rl('lbl.original_price')}</span>
               <span className="text-right whitespace-nowrap">{rl('lbl.our_price')}</span>
@@ -367,11 +446,11 @@ export default function SaleShow() {
               const ourUnit = qty > 0 ? Math.max(0, reducedLineTotal / qty) : unit;
               return (
               <div key={item.id} className="mb-3 min-w-0">
-                <div className="text-sm font-bold text-black break-words" style={{ overflowWrap: 'anywhere' }}>{item.product_name}</div>
-                <div className="grid grid-cols-[40px_1fr_1fr_1fr] gap-2 text-sm text-black font-semibold pl-1 mt-0.5 min-w-0 items-center">
+                <div className="text-sm font-bold text-black dark:text-slate-100dark:text-slate-100 break-words" style={{ overflowWrap: 'anywhere' }}>{item.product_name}</div>
+                <div className="grid grid-cols-[40px_1fr_1fr_1fr] gap-2 text-sm text-black dark:text-slate-100dark:text-slate-200 font-semibold pl-1 mt-0.5 min-w-0 items-center">
                   <span className="text-left">{qty}</span>
                   <span className="text-right min-w-0 break-words">{fmt(origPrice)}</span>
-                  <span className="text-right text-black min-w-0 break-words">{fmt(ourUnit)}</span>
+                  <span className="text-right text-black dark:text-slate-100min-w-0 break-words">{fmt(ourUnit)}</span>
                   <span className="text-right min-w-0 break-words">{fmt(reducedLineTotal)}</span>
                 </div>
               </div>
@@ -379,7 +458,7 @@ export default function SaleShow() {
             })}
           </div>
 
-          <hr className="border-slate-200 mb-4" />
+          <hr className="border-slate-200 dark:border-slate-700 mb-4" />
 
           {/* Totals */}
           <div className="space-y-2">
@@ -407,35 +486,35 @@ export default function SaleShow() {
             {parseFloat(sale.tax) > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-black font-semibold">{t('lbl.tax')}</span>
-                <span className="font-bold text-black">{fmt(sale.tax)}</span>
+                <span className="font-bold text-black dark:text-slate-100">{fmt(sale.tax)}</span>
               </div>
             )}
 
             <div className="flex justify-between items-baseline pt-1 border-t border-slate-100">
-              <span className="text-base font-black text-black">{t('lbl.grand_total')}</span>
-              <span className="text-xl font-black text-black">{currency} {fmt(sale.total)}</span>
+              <span className="text-base font-black text-black dark:text-slate-100">{t('lbl.grand_total')}</span>
+              <span className="text-xl font-black text-black dark:text-slate-100">{currency} {fmt(sale.total)}</span>
             </div>
 
             {paidCash   > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-black font-semibold">{t('lbl.cash_paid')} ({t('lbl.cash')})</span>
-                <span className="font-bold text-black">{fmt(cashGiven)}</span>
+                <span className="font-bold text-black dark:text-slate-100">{fmt(cashGiven)}</span>
               </div>
             )}
             {paidCard   > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-black font-semibold">{t('lbl.cash_paid')} ({t('lbl.card')})</span>
-                <span className="font-bold text-black">{fmt(paidCard)}</span>
+                <span className="font-bold text-black dark:text-slate-100">{fmt(paidCard)}</span>
               </div>
             )}
             {paidCredit > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-black font-semibold">{t('lbl.credit')}</span>
-                <span className="font-bold text-black">{fmt(paidCredit)}</span>
+                <span className="font-bold text-black dark:text-slate-100">{fmt(paidCredit)}</span>
               </div>
             )}
             {change > 0 && (
-              <div className="flex justify-between text-sm font-bold text-black">
+              <div className="flex justify-between text-sm font-bold text-black dark:text-slate-100">
                 <span>{t('lbl.change')}</span>
                 <span>{fmt(change)}</span>
               </div>
@@ -446,7 +525,7 @@ export default function SaleShow() {
 
           {/* Footer */}
           <div className="text-center leading-relaxed">
-            <p className="text-[11px] font-semibold text-black">
+            <p className="text-[11px] font-semibold text-black dark:text-slate-100">
               {shopInfo.receipt_footer || 'Thank you for shopping with us!'}
             </p>
             {true && (
@@ -530,7 +609,7 @@ function MetaRow({ label, value, mono }) {
     <div className="flex items-center justify-between gap-3 text-sm leading-snug min-w-0">
       <span className="text-black font-semibold pr-2 shrink-0">{label}</span>
       <span
-        className={`ml-auto text-right font-bold text-black min-w-0 break-words ${mono ? 'font-mono' : ''}`}
+        className={`ml-auto text-right font-bold text-black dark:text-slate-100min-w-0 break-words ${mono ? 'font-mono' : ''}`}
         style={{ overflowWrap: 'anywhere' }}
       >
         {value}
