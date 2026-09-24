@@ -513,7 +513,7 @@ export default function Settings() {
   async function handleBackup() {
     setBacking(true);
     try {
-      const res = await fetch(`${getApiUrl()}/settings/backup`, {
+      const res = await fetch(`${getApiUrl()}/api/settings/backup`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
