@@ -1,6 +1,178 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+
+// ─── Animated Add-Product Demo ────────────────────────────────────────────────
+const DEMO_STEPS = [
+  { id: 'click',  label: 'Click "Add Product"',   hint: 'Button at top-right of the Products page' },
+  { id: 'name',   label: 'Enter product name',    hint: 'Type the product name',        field: 'Name',          value: 'Coca Cola 330ml' },
+  { id: 'price',  label: 'Set selling price',     hint: 'Enter the price customers pay', field: 'Selling Price', value: '350.00' },
+  { id: 'cost',   label: 'Set cost price',        hint: 'Used for profit reports',       field: 'Cost Price',    value: '220.00' },
+  { id: 'stock',  label: 'Set stock quantity',    hint: 'How many units you have',       field: 'Stock Qty',     value: '100' },
+  { id: 'save',   label: 'Click Save',            hint: 'Product is added to your list!' },
+];
+
+function useTyping(target, active) {
+  const [typed, setTyped] = useState('');
+  const ref = useRef(null);
+  useEffect(() => {
+    setTyped('');
+    if (!active || !target) return;
+    let i = 0;
+    ref.current = setInterval(() => {
+      i++;
+      setTyped(target.slice(0, i));
+      if (i >= target.length) clearInterval(ref.current);
+    }, 60);
+    return () => clearInterval(ref.current);
+  }, [active, target]);
+  return typed;
+}
+
+function ProductDemo() {
+  const [step, setStep] = useState(0);
+  const [done, setDone] = useState(false);
+  const [playing, setPlaying] = useState(true);
+  const timerRef = useRef(null);
+
+  const formValues = { Name: '', 'Selling Price': '', 'Cost Price': '', 'Stock Qty': '' };
+  DEMO_STEPS.forEach((s, i) => {
+    if (s.field && i < step) formValues[s.field] = s.value;
+    if (s.field && i === step) formValues[s.field] = ''; // will be typed
+  });
+  const current = DEMO_STEPS[step];
+  const typedVal = useTyping(current?.value, playing && !!current?.field);
+
+  useEffect(() => {
+    if (!playing) return;
+    const delay = current?.field ? (current.value.length * 60 + 800) : 1200;
+    timerRef.current = setTimeout(() => {
+      if (step < DEMO_STEPS.length - 1) setStep(s => s + 1);
+      else { setDone(true); setPlaying(false); }
+    }, delay);
+    return () => clearTimeout(timerRef.current);
+  }, [step, playing]);
+
+  function replay() { setStep(0); setDone(false); setPlaying(true); }
+  function prev()   { setStep(s => Math.max(0, s - 1)); setDone(false); setPlaying(false); }
+  function next()   { if (step < DEMO_STEPS.length - 1) { setStep(s => s + 1); setDone(false); } }
+
+  const displayValues = { ...formValues };
+  if (current?.field) displayValues[current.field] = typedVal;
+
+  const formOpen = step >= 1;
+  const saved    = step === DEMO_STEPS.length - 1 && done;
+
+  return (
+    <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden select-none">
+      {/* Mock browser chrome */}
+      <div className="bg-slate-200 px-4 py-2 flex items-center gap-2">
+        <span className="w-3 h-3 rounded-full bg-red-400" />
+        <span className="w-3 h-3 rounded-full bg-yellow-400" />
+        <span className="w-3 h-3 rounded-full bg-green-400" />
+        <span className="ml-3 flex-1 bg-white rounded-md px-3 py-1 text-xs text-slate-400 font-mono">LMUC POS — Products</span>
+      </div>
+
+      {/* Mock app */}
+      <div className="relative bg-white min-h-[320px] p-4">
+
+        {/* Products header */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-slate-800 text-sm">Products</h3>
+          <button className={`px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all duration-300
+            ${step === 0 ? 'bg-orange-500 ring-4 ring-orange-300 scale-105' : 'bg-orange-500'}`}>
+            + Add Product
+          </button>
+        </div>
+
+        {/* Mock product list */}
+        <div className="space-y-1.5 mb-3">
+          {['Apple iPhone Case', 'USB-C Cable 1m', 'Wireless Mouse'].map(p => (
+            <div key={p} className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-50 border border-slate-100">
+              <span className="text-xs text-slate-600">{p}</span>
+              <span className="text-xs font-semibold text-slate-700">LKR 1,200</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Add Product modal */}
+        {formOpen && (
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center p-4"
+            style={{ animation: 'fadeIn 0.2s ease' }}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+              style={{ animation: 'slideUp 0.25s ease' }}>
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <span className="font-bold text-slate-800 text-sm">Add Product</span>
+                <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs">✕</span>
+              </div>
+              <div className="p-5 space-y-3">
+                {['Name', 'Selling Price', 'Cost Price', 'Stock Qty'].map(f => (
+                  <div key={f}>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">{f}</label>
+                    <div className={`border rounded-lg px-3 py-2 text-sm font-mono transition-all duration-200
+                      ${current?.field === f ? 'border-orange-400 ring-2 ring-orange-100' : 'border-slate-200'}`}>
+                      {displayValues[f] || <span className="text-slate-300">—</span>}
+                      {current?.field === f && (
+                        <span className="inline-block w-0.5 h-4 bg-orange-500 ml-0.5 animate-pulse align-middle" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <button className={`w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-300
+                  ${step === DEMO_STEPS.length - 1 ? 'bg-orange-500 ring-4 ring-orange-200 scale-105' : 'bg-orange-400'}`}>
+                  Save Product
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success toast */}
+        {done && (
+          <div className="absolute top-4 right-4 flex items-center gap-2 bg-green-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg"
+            style={{ animation: 'slideDown 0.3s ease' }}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
+            </svg>
+            Product added successfully!
+          </div>
+        )}
+      </div>
+
+      {/* Step indicator */}
+      <div className="bg-slate-50 border-t border-slate-200 px-4 py-3">
+        <div className="flex items-center gap-2 mb-2">
+          {DEMO_STEPS.map((s, i) => (
+            <div key={i} className={`flex-1 h-1 rounded-full transition-all duration-500
+              ${i < step ? 'bg-orange-500' : i === step ? 'bg-orange-300' : 'bg-slate-200'}`} />
+          ))}
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-slate-700">
+              Step {step + 1}/{DEMO_STEPS.length}: {current?.label}
+            </p>
+            <p className="text-xs text-slate-400">{current?.hint}</p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button onClick={prev} disabled={step === 0}
+              className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-200 hover:bg-slate-300 text-slate-600 disabled:opacity-30 transition-colors">‹</button>
+            <button onClick={done ? replay : next}
+              className="px-2.5 py-1 rounded-lg text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white transition-colors">
+              {done ? '↺ Replay' : '›'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes slideUp { from { transform: translateY(16px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+        @keyframes slideDown { from { transform: translateY(-12px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+      `}</style>
+    </div>
+  );
+}
 
 const SECTIONS = [
   {
@@ -72,6 +244,7 @@ Note: some features (reports, user management) require a connection and will be 
     articles: [
       {
         title: 'Adding a Product',
+        demo: 'add-product',
         body: `Go to Products → Add Product.
 
 Required: Name, Selling Price.
@@ -395,6 +568,7 @@ export default function Help() {
                       {isOpen && (
                         <div className={`px-5 pb-5 border-t text-sm leading-relaxed whitespace-pre-line
                           ${dark ? 'border-[#2a2a2a] text-slate-300' : 'border-slate-100 text-slate-600'}`}>
+                          {art.demo === 'add-product' && <ProductDemo />}
                           <div className="pt-4">{art.body}</div>
                         </div>
                       )}
