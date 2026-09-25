@@ -28,10 +28,12 @@ export default function CategoriesIndex() {
   const [offlineCategories, setOfflineCategories] = useState([]);
   const [pendingCategories, setPendingCategories] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [search, setSearch] = useState('');
 
   const [pendingFile, setPendingFile]       = useState(null);
   const [pendingPreview, setPendingPreview] = useState(null);
   const [currentImage, setCurrentImage]     = useState(null);
+  const [showInPos, setShowInPos]           = useState(false);
   const fileInputRef = useRef(null);
 
   const { register, handleSubmit: rhfSubmit, formState: { errors }, reset, setFocus } = useForm({ defaultValues: empty });
@@ -45,7 +47,12 @@ export default function CategoriesIndex() {
 
   const { data: serverCategories = [], isLoading, refetch } = useGetCategoriesQuery(undefined, { skip: !isOnline });
   const baseCategories = isOnline ? serverCategories : offlineCategories;
-  const categories = [...pendingCategories, ...baseCategories.filter(c => !pendingCategories.some(p => p.id === c.id))];
+  const allCategories = [...pendingCategories, ...baseCategories.filter(c => !pendingCategories.some(p => p.id === c.id))];
+
+  const categories = search.trim()
+    ? allCategories.filter(c => c.name.toLowerCase().includes(search.trim().toLowerCase()))
+    : allCategories;
+
   const [create, { isLoading: creating }] = useCreateCategoryMutation();
   const [update, { isLoading: updating }] = useUpdateCategoryMutation();
   const [del]                             = useDeleteCategoryMutation();
@@ -98,6 +105,7 @@ export default function CategoriesIndex() {
     setPendingFile(null);
     setPendingPreview(null);
     setCurrentImage(null);
+    setShowInPos(false);
     setModal('form');
     setTimeout(() => setFocus('name'), 50);
   }
@@ -108,6 +116,7 @@ export default function CategoriesIndex() {
     setPendingFile(null);
     setPendingPreview(null);
     setCurrentImage(c.image || null);
+    setShowInPos(!!c.show_in_pos);
     setModal({ edit: c });
     setTimeout(() => setFocus('name'), 50);
   }
@@ -119,7 +128,7 @@ export default function CategoriesIndex() {
     setSaving(true);
     try {
       const image = await uploadImage();
-      const payload = { ...data, image };
+      const payload = { ...data, image, show_in_pos: showInPos };
       if (isOnline) {
         if (modal?.edit) await update({ id: modal.edit.id, ...payload }).unwrap();
         else await create(payload).unwrap();
@@ -139,6 +148,13 @@ export default function CategoriesIndex() {
     } catch (e) { setErr(e?.data?.error || e?.message || 'Failed'); }
     finally { setSaving(false); }
   });
+
+  async function toggleShowInPos(c) {
+    try {
+      await update({ id: c.id, name: c.name, show_in_pos: !c.show_in_pos }).unwrap();
+      refetch();
+    } catch {}
+  }
 
   async function handleDelete(c) { setConfirmDelete(c); }
   async function confirmDeleteAction() {
@@ -174,11 +190,27 @@ export default function CategoriesIndex() {
         </div>
       </div>
 
+      {/* Search bar */}
+      <div className="relative">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search categories…"
+          className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+        />
+        {search && (
+          <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
+        )}
+      </div>
+
       {/* Mobile cards */}
       <div className="md:hidden space-y-2">
         {isLoading && <div className="p-8 text-center text-slate-400 text-sm bg-white rounded-xl border border-slate-100">{t('lbl.loading')}</div>}
         {!isLoading && categories.length === 0 && (
-          <div className="p-8 text-center text-slate-400 text-sm bg-white rounded-xl border border-slate-100">No categories yet</div>
+          <div className="p-8 text-center text-slate-400 text-sm bg-white rounded-xl border border-slate-100">No categories found</div>
         )}
         {categories.map((c, i) => (
           <div key={c.id} className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex items-center justify-between">
@@ -194,7 +226,12 @@ export default function CategoriesIndex() {
                 {(c._offline || c._pending) && <span className="text-[10px] text-amber-600 font-medium">Pending sync</span>}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              <button onClick={() => toggleShowInPos(c)}
+                title={c.show_in_pos ? 'Shown in POS' : 'Hidden from POS'}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${c.show_in_pos ? 'bg-green-50 border-green-200 text-green-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+                {c.show_in_pos ? '✓ POS' : 'POS'}
+              </button>
               <button onClick={() => openEdit(c)}
                 className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                 {t('btn.edit')}
@@ -221,12 +258,13 @@ export default function CategoriesIndex() {
                 <th className="px-4 py-3 text-left font-semibold w-12">#</th>
                 <th className="px-4 py-3 text-left font-semibold w-16">Image</th>
                 <th className="px-4 py-3 text-left font-semibold">{t('cust.name')}</th>
+                <th className="px-4 py-3 text-center font-semibold w-28">Show in POS</th>
                 <th className="px-4 py-3 text-right font-semibold">{t('th.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {categories.length === 0 && (
-                <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">No categories yet</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">No categories found</td></tr>
               )}
               {categories.map((c, i) => (
                 <tr key={c.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50 border-b border-slate-100 transition-colors">
@@ -242,6 +280,17 @@ export default function CategoriesIndex() {
                   <td className="px-4 py-3">
                     <span className="font-medium text-slate-800">{c.name}</span>
                     {(c._offline || c._pending) && <span className="ml-2 text-[10px] text-amber-600 font-medium">Pending sync</span>}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <button onClick={() => isOnline && toggleShowInPos(c)}
+                      title={c.show_in_pos ? 'Click to hide from POS' : 'Click to show in POS'}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all
+                        ${c.show_in_pos
+                          ? 'bg-green-50 border-green-300 text-green-700 hover:bg-green-100'
+                          : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100'}`}>
+                      <span className={`w-2 h-2 rounded-full ${c.show_in_pos ? 'bg-green-500' : 'bg-slate-300'}`} />
+                      {c.show_in_pos ? 'Visible' : 'Hidden'}
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1.5">
@@ -325,6 +374,19 @@ export default function CategoriesIndex() {
                 />
                 {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
               </div>
+
+              {/* Show in POS toggle */}
+              <div className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">Show in POS panel</p>
+                  <p className="text-xs text-slate-400">Display this category in the billing screen</p>
+                </div>
+                <button type="button" onClick={() => setShowInPos(v => !v)}
+                  className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${showInPos ? 'bg-green-500' : 'bg-slate-300'}`}>
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${showInPos ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={close}
                   className="px-4 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">

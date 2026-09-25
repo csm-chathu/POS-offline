@@ -122,6 +122,7 @@ async function runMigrations(sequelize) {
   const migrations = [
     { name: '002_remove_duplicate_pos_feature', sql: `DELETE FROM features WHERE \`key\` = 'pos'` },
     { name: '003_categories_add_image', sql: `ALTER TABLE categories ADD COLUMN image VARCHAR(512) NULL` },
+    { name: '004_categories_add_show_in_pos', sql: `ALTER TABLE categories ADD COLUMN show_in_pos TINYINT(1) NOT NULL DEFAULT 0` },
   ];
 
   for (const m of migrations) {

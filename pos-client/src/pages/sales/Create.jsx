@@ -659,7 +659,8 @@ export default function SalesCreate() {
 
   // ─── Derived ─────────────────────────────────────────────────────────────────
   const categories = useMemo(() => {
-    if (allCategories.length > 0) return [...allCategories].sort((a, b) => a.name.localeCompare(b.name));
+    if (allCategories.length > 0)
+      return [...allCategories].filter(c => c.show_in_pos).sort((a, b) => a.name.localeCompare(b.name));
     // offline fallback: derive from loaded products
     const map = new Map();
     products.forEach(p => { if (p.category_id && p.category?.name) map.set(p.category_id, p.category.name); });
@@ -1535,7 +1536,7 @@ export default function SalesCreate() {
                       : 'bg-white border-slate-100 text-slate-600 hover:border-blue-300 hover:shadow-md'}`}>
                   All Products
                 </button>
-                {categories.slice(0, 10).map((cat, i) => {
+                {categories.map((cat, i) => {
                   const CAT_GRADIENTS = [
                     'from-blue-400 to-blue-600', 'from-green-400 to-green-600',
                     'from-orange-400 to-orange-600', 'from-purple-400 to-purple-600',
