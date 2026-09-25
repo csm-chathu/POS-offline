@@ -258,30 +258,36 @@ async function startServer() {
       console.log('[DB] Features seeded and assigned to admin role');
     } catch (e) { console.error('[DB feature seed error]', e.message); }
 
-    // Seed permission manager user (settings + users access only)
+    // Seed Shop Owner role (all features except data_import, extensions, day_end, scale, provision)
     try {
       const bcrypt = require('bcryptjs');
       const { User, Role, Feature } = models;
-      const [managerRole] = await Role.findOrCreate({ where: { name: 'setup' }, defaults: { name: 'setup' } });
+      // Rename legacy 'setup' role to 'shop_owner' if it exists
+      await Role.update({ name: 'shop_owner' }, { where: { name: 'setup' } }).catch(() => {});
+      const [ownerRole] = await Role.findOrCreate({ where: { name: 'shop_owner' }, defaults: { name: 'shop_owner' } });
       const hash = await bcrypt.hash('123', 10);
-      let managerUser = await User.findOne({ where: { email: 'manager' } });
-      if (!managerUser) {
-        managerUser = await User.create({ name: 'Permission Manager', email: 'manager', password: hash });
-        await sequelize.query(`INSERT OR IGNORE INTO user_role (user_id, role_id) VALUES (${managerUser.id}, ${managerRole.id})`);
-        console.log('[DB] Permission manager created — email: manager  password: 123');
+      let ownerUser = await User.findOne({ where: { email: 'manager' } });
+      if (!ownerUser) {
+        ownerUser = await User.create({ name: 'Shop Owner', email: 'manager', password: hash });
+        await sequelize.query(`INSERT OR IGNORE INTO user_role (user_id, role_id) VALUES (${ownerUser.id}, ${ownerRole.id})`);
+        console.log('[DB] Shop Owner created — email: manager  password: 123');
+      } else {
+        // Update name if old seed left "Permission Manager"
+        if (ownerUser.name === 'Permission Manager') await ownerUser.update({ name: 'Shop Owner' });
+        await sequelize.query(`INSERT OR IGNORE INTO user_role (user_id, role_id) VALUES (${ownerUser.id}, ${ownerRole.id})`);
       }
-      // Assign settings + users to the manager role (role-level permissions)
-      const allowedFeatures = await Feature.findAll({ where: { key: ['settings', 'users', 'role_permissions'] } });
-      if (allowedFeatures.length > 0) {
-        await managerRole.setFeatures(allowedFeatures);
-        // Also sync direct user-level features for the seeded manager user
-        await sequelize.query(`DELETE FROM user_features WHERE user_id = ${managerUser.id}`);
-        for (const f of allowedFeatures) {
-          await sequelize.query(`INSERT OR IGNORE INTO user_features (user_id, feature_id) VALUES (${managerUser.id}, ${f.id})`);
+      // All features except data_import, extensions (day_end/scale/provision are admin-only pages, not features)
+      const EXCLUDED = ['data_import', 'extensions'];
+      const ownerFeatures = await Feature.findAll({ where: { key: { [require('sequelize').Op.notIn]: EXCLUDED } } });
+      if (ownerFeatures.length > 0) {
+        await ownerRole.setFeatures(ownerFeatures);
+        await sequelize.query(`DELETE FROM user_features WHERE user_id = ${ownerUser.id}`);
+        for (const f of ownerFeatures) {
+          await sequelize.query(`INSERT OR IGNORE INTO user_features (user_id, feature_id) VALUES (${ownerUser.id}, ${f.id})`);
         }
       }
-      console.log('[DB] Manager role permissions set — settings + users');
-    } catch (e) { console.error('[DB manager seed error]', e.message); }
+      console.log('[DB] Shop Owner role permissions set');
+    } catch (e) { console.error('[DB shop_owner seed error]', e.message); }
 
     // Seed products and categories from bundled data.json (first install only)
     try {

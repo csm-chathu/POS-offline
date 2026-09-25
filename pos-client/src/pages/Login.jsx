@@ -11,7 +11,7 @@ const OFFLINE_KEY = 'pos_offline_creds';
 
 function getHomeRoute(auth) {
   const features = auth?.user?.features ?? null; // null = admin
-  if (features === null || features.includes('pos')) return '/sales/create';
+  if (features === null || features.includes('pos') || features.includes('new_sale')) return '/sales/create';
   if (features.includes('users'))            return '/users';
   if (features.includes('reports'))          return '/reports';
   if (features.includes('products'))         return '/products';
@@ -21,14 +21,15 @@ function getHomeRoute(auth) {
 }
 
 const ROLE_COLORS = {
-  setup:   { avatar: 'bg-purple-600', badge: 'bg-purple-100 text-purple-700', btn: 'from-purple-600 to-purple-800', ring: 'ring-purple-400/50' },
+  setup:       { avatar: 'bg-purple-600', badge: 'bg-purple-100 text-purple-700', btn: 'from-purple-600 to-purple-800', ring: 'ring-purple-400/50' },
+  shop_owner:  { avatar: 'bg-purple-600', badge: 'bg-purple-100 text-purple-700', btn: 'from-purple-600 to-purple-800', ring: 'ring-purple-400/50' },
   manager: { avatar: 'bg-indigo-600', badge: 'bg-indigo-100 text-indigo-700', btn: 'from-indigo-600 to-indigo-800', ring: 'ring-indigo-400/50' },
   cashier: { avatar: 'bg-teal-600',   badge: 'bg-teal-100 text-teal-700',     btn: 'from-teal-600 to-teal-800',   ring: 'ring-teal-400/50'   },
   custom:  { avatar: 'bg-orange-500', badge: 'bg-orange-100 text-orange-700', btn: 'from-orange-500 to-orange-700', ring: 'ring-orange-400/50' },
 };
 const DEFAULT_COLORS = { avatar: 'bg-slate-600', badge: 'bg-slate-100 text-slate-700', btn: 'from-slate-600 to-slate-800', ring: 'ring-slate-400/50' };
 
-const ROLE_LABELS = { cashier: 'Cashier', setup: 'Setup', manager: 'Manager', custom: 'Custom' };
+const ROLE_LABELS = { cashier: 'Cashier', setup: 'Shop Owner', shop_owner: 'Shop Owner', manager: 'Manager', custom: 'Custom' };
 
 function getInitials(name = '') {
   return name.split(' ').map(w => w[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || '?';
