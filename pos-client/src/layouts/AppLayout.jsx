@@ -120,7 +120,7 @@ export default function AppLayout() {
   const notifCount = useNotifBadge(token);
 
   const [collapsed, setCollapsed] = useState(
-    () => localStorage.getItem('sidebar_collapsed') === 'true' || window.innerWidth < 900
+    () => localStorage.getItem('sidebar_collapsed') === 'true'
   );
   const [sidebarHover, setSidebarHover] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -133,14 +133,6 @@ export default function AppLayout() {
     return () => clearTimeout(t);
   }, [location.pathname]);
 
-  // Auto-collapse sidebar on small windows
-  useEffect(() => {
-    function handleResize() {
-      if (window.innerWidth < 900) setCollapsed(true);
-    }
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   useEffect(() => {
     fetch(`${API}/api/settings/public`)
@@ -302,14 +294,14 @@ export default function AppLayout() {
   const sidebarBg = SIDEBAR_COLORS[layoutSettings?.sidebar_theme || shopInfo.sidebar_theme] || '#141414';
 
   function navCls(isActive) {
-    const base = `flex items-center py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap overflow-hidden
+    const base = `flex items-center py-2.5 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap overflow-hidden
       ${displayCollapsed ? 'justify-center px-0 w-10 mx-auto' : 'gap-3 px-3'}`;
     if (isActive) return `${base} bg-orange-500 text-white shadow-md shadow-orange-500/30`;
     return `${base} text-white/80 hover:text-white hover:bg-white/10`;
   }
 
   function navClsLocked() {
-    return `flex items-center py-2.5 rounded-xl text-sm font-medium whitespace-nowrap overflow-hidden cursor-not-allowed opacity-40
+    return `flex items-center py-2.5 rounded-xl text-base font-medium whitespace-nowrap overflow-hidden cursor-not-allowed opacity-40
       text-white/40
       ${displayCollapsed ? 'justify-center px-0 w-10 mx-auto' : 'gap-3 px-3'}`;
   }
@@ -355,7 +347,7 @@ export default function AppLayout() {
           </div>
           {!displayCollapsed && (
             <div className="min-w-0">
-              <p className="font-bold text-sm leading-tight truncate text-white">
+              <p className="font-bold text-base leading-tight truncate text-white">
                 {shopInfo.shop_name || 'LMUC POS'}
               </p>
               <p className="text-xs text-slate-400">Point of Sale</p>
@@ -472,13 +464,13 @@ export default function AppLayout() {
             className={`hidden md:flex items-center gap-2 py-2 rounded-xl transition-all duration-150 text-slate-400 hover:text-white hover:bg-white/10
               ${displayCollapsed ? 'justify-center w-10 mx-auto px-0' : 'px-3 w-full'}`}>
             {collapsed ? Icons.chevronsRight : Icons.chevronsLeft}
-            {!displayCollapsed && <span className="text-sm font-medium">{t('btn.collapse')}</span>}
+            {!displayCollapsed && <span className="text-base font-medium">{t('btn.collapse')}</span>}
           </button>
           <button onClick={handleLogout} title={t('btn.logout')}
             className={`flex items-center gap-2 py-2 rounded-xl transition-all duration-150 text-slate-400 hover:text-white hover:bg-red-600/20
               ${displayCollapsed ? 'justify-center w-10 mx-auto px-0' : 'px-3 w-full'}`}>
             {Icons.logout}
-            {!displayCollapsed && <span className="text-sm font-medium">{t('btn.logout')}</span>}
+            {!displayCollapsed && <span className="text-base font-medium">{t('btn.logout')}</span>}
           </button>
         </div>
       </aside>
@@ -503,7 +495,7 @@ export default function AppLayout() {
                 : <span>{(shopInfo.shop_name || 'L')[0].toUpperCase()}</span>}
             </div>
             <div className="min-w-0">
-              <p className="font-bold text-sm leading-tight truncate text-white">{shopInfo.shop_name || 'LMUC POS'}</p>
+              <p className="font-bold text-base leading-tight truncate text-white">{shopInfo.shop_name || 'LMUC POS'}</p>
               <p className="text-xs text-slate-400">Point of Sale</p>
             </div>
           </div>
@@ -512,7 +504,7 @@ export default function AppLayout() {
             {mainNav.map(({ to, label, icon, highlight, offlineOk, end: endProp }) => {
               const locked = !isOnline && !offlineOk;
               if (locked) return (
-                <div key={to} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap cursor-not-allowed opacity-40 text-white/40">
+                <div key={to} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium whitespace-nowrap cursor-not-allowed opacity-40 text-white/40">
                   {icon}<span className="flex-1 truncate">{label}</span>
                 </div>
               );
@@ -520,7 +512,7 @@ export default function AppLayout() {
                 <NavLink key={to} to={to}
                   end={endProp || to === '/sales' || to === '/dashboard' || to === '/settings' || to === '/invoices'}
                   onClick={() => setSidebarHover(false)}
-                  className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
+                  className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
                     ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
                   {icon}<span className="flex-1 truncate">{label}</span>
                   {highlight && <span className="text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded-md">POS</span>}
@@ -535,14 +527,14 @@ export default function AppLayout() {
                 {mgmtNav.map(({ to, label, icon, offlineOk }) => {
                   const locked = !isOnline && !offlineOk;
                   if (locked) return (
-                    <div key={to} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-not-allowed opacity-40 text-white/40">
+                    <div key={to} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium cursor-not-allowed opacity-40 text-white/40">
                       {icon}<span className="flex-1 truncate">{label}</span>
                     </div>
                   );
                   return (
                     <NavLink key={to} to={to} end={to === '/settings'}
                       onClick={() => setSidebarHover(false)}
-                      className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
+                      className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
                         ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
                       {icon}<span className="flex-1 truncate">{label}</span>
                     </NavLink>
@@ -552,7 +544,7 @@ export default function AppLayout() {
             )}
             {extState?.accounting?.enabled && (
               <NavLink to="/accounting" onClick={() => setSidebarHover(false)}
-                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
+                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
                   ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
                 {Icons.accounting}<span className="flex-1 truncate">Accounting</span>
               </NavLink>
@@ -560,7 +552,7 @@ export default function AppLayout() {
 
             {isAdmin && (
               <NavLink to="/settings/scale" onClick={() => setSidebarHover(false)}
-                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
+                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
                   ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
                 {Icons.scale}
                 <span className="flex-1 truncate">Scale</span>
@@ -568,7 +560,7 @@ export default function AppLayout() {
             )}
             {isAdmin && (
               <NavLink to="/admin/provision-tenant" onClick={() => setSidebarHover(false)}
-                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
+                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
                   ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
                 <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m-6 8a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4"/></svg>
                 <span className="flex-1 truncate">Provision Tenant</span>
@@ -580,12 +572,12 @@ export default function AppLayout() {
             <button onClick={toggleCollapse}
               className="hidden md:flex items-center gap-2 px-3 py-2 w-full rounded-xl transition-all text-slate-400 hover:text-white hover:bg-white/10">
               {Icons.chevronsLeft}
-              <span className="text-sm font-medium">{t('btn.collapse')}</span>
+              <span className="text-base font-medium">{t('btn.collapse')}</span>
             </button>
             <button onClick={handleLogout}
               className="flex items-center gap-2 px-3 py-2 w-full rounded-xl transition-all text-slate-400 hover:text-white hover:bg-red-600/20">
               {Icons.logout}
-              <span className="text-sm font-medium">{t('btn.logout')}</span>
+              <span className="text-base font-medium">{t('btn.logout')}</span>
             </button>
           </div>
         </div>,
