@@ -693,9 +693,22 @@ function spawnOfflineApi() {
     ? path.join(process.resourcesPath, 'pos-api', 'src', 'app.js')
     : path.join(__dirname, '..', 'pos-api', 'src', 'app.js');
 
-  const dbPath  = path.join(app.getPath('userData'), 'pos.db');
-  const logPath = path.join(app.getPath('userData'), 'api.log');
-  const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+  const dbPath      = path.join(app.getPath('userData'), 'pos.db');
+  const uploadsDir  = path.join(app.getPath('userData'), 'uploads');
+  const logPath     = path.join(app.getPath('userData'), 'api.log');
+  const logStream   = fs.createWriteStream(logPath, { flags: 'a' });
+
+  // Migrate uploads from old resources path to userData on first launch
+  const oldUploads = path.join(process.resourcesPath, 'pos-api', 'uploads');
+  if (fs.existsSync(oldUploads) && !fs.existsSync(uploadsDir)) {
+    try {
+      fs.cpSync(oldUploads, uploadsDir, { recursive: true });
+      console.log('[offline] Migrated uploads to userData');
+    } catch (e) {
+      console.error('[offline] Upload migration failed:', e.message);
+    }
+  }
+  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
   const stamp = () => new Date().toISOString();
   logStream.write(`\n--- API start ${stamp()} ---\n`);
@@ -710,6 +723,7 @@ function spawnOfflineApi() {
       DIALECT: 'sqlite',
       PORT: '8000',
       DB_PATH: dbPath,
+      UPLOADS_DIR: uploadsDir,
       JWT_SECRET: 'lumac_pos_offline_jwt_secret',
       NODE_ENV: 'production',
     },

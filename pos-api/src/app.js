@@ -43,8 +43,9 @@ app.use('/api/reports',   require('./routes/reports'));
 app.use('/api/imagekit',       require('./routes/imagekit'));
 app.use('/api/images',         require('./routes/localImages'));
 
-// Serve locally uploaded product images
-app.use('/uploads', require('express').static(require('path').join(__dirname, '../uploads')));
+// Serve locally uploaded product images — use UPLOADS_DIR if set (Electron userData)
+const uploadsRoot = process.env.UPLOADS_DIR || require('path').join(__dirname, '../uploads');
+app.use('/uploads', require('express').static(uploadsRoot));
 app.use('/api/notifications',  require('./routes/notifications'));
 app.use('/api/tenants',        require('./routes/tenants'));
 app.use('/api/scale',          require('./routes/scale'));

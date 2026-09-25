@@ -4,7 +4,11 @@ const path    = require('path');
 const fs      = require('fs');
 const auth    = require('../middleware/auth');
 
-const uploadDir = path.join(__dirname, '../../uploads/products');
+// Use UPLOADS_DIR env var (set by Electron main process to userData) so images
+// survive app updates. Falls back to local path for dev/server mode.
+const uploadDir = process.env.UPLOADS_DIR
+  ? path.join(process.env.UPLOADS_DIR, 'products')
+  : path.join(__dirname, '../../uploads/products');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
