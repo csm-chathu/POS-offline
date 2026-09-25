@@ -280,8 +280,8 @@ async function startServer() {
         if (ownerUser.name === 'Permission Manager') await ownerUser.update({ name: 'Shop Owner' });
         await sequelize.query(`INSERT OR IGNORE INTO user_role (user_id, role_id) VALUES (${ownerUser.id}, ${ownerRole.id})`);
       }
-      // All features except data_import, extensions (day_end/scale/provision are admin-only pages, not features)
-      const EXCLUDED = ['data_import', 'extensions'];
+      // All features except data_import, invoices (Day End), extensions
+      const EXCLUDED = ['data_import', 'invoices', 'extensions'];
       const ownerFeatures = await Feature.findAll({ where: { key: { [require('sequelize').Op.notIn]: EXCLUDED } } });
       if (ownerFeatures.length > 0) {
         await ownerRole.setFeatures(ownerFeatures);
