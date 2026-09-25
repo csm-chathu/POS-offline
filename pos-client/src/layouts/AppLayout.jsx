@@ -207,9 +207,6 @@ export default function AppLayout() {
   }, [isOnline, wasOffline, token]);
 
   useEffect(() => {
-    if (location.pathname === '/sales/create') {
-      setCollapsed(true);
-    }
     setMobileOpen(false);
   }, [location.pathname]);
 
@@ -293,17 +290,45 @@ export default function AppLayout() {
   const SIDEBAR_COLORS = { slate: '#1e293b', black: '#111111', navy: '#1a3058', green: '#14532d', teal: '#134e4a', purple: '#3b0764', coffee: '#292018' };
   const sidebarBg = SIDEBAR_COLORS[layoutSettings?.sidebar_theme || shopInfo.sidebar_theme] || '#141414';
 
+  const ICON_COLORS = {
+    dashboard:   'bg-blue-500',
+    new_sale:    'bg-orange-500',
+    sales:       'bg-green-500',
+    products:    'bg-purple-500',
+    customers:   'bg-cyan-500',
+    credit:      'bg-rose-500',
+    purchases:   'bg-amber-500',
+    suppliers:   'bg-indigo-500',
+    categories:  'bg-fuchsia-500',
+    reports:     'bg-emerald-500',
+    invoices:    'bg-yellow-500',
+    users:       'bg-sky-500',
+    settings:    'bg-slate-500',
+    extensions:  'bg-violet-500',
+    accounting:  'bg-lime-600',
+    data_import: 'bg-teal-500',
+    scale:       'bg-slate-400',
+  };
+
   function navCls(isActive) {
-    const base = `flex items-center py-2.5 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap overflow-hidden
-      ${displayCollapsed ? 'justify-center px-0 w-10 mx-auto' : 'gap-3 px-3'}`;
-    if (isActive) return `${base} bg-orange-500 text-white shadow-md shadow-orange-500/30`;
+    const base = `flex items-center py-3 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap overflow-hidden
+      ${displayCollapsed ? 'justify-center px-0 w-12 mx-auto' : 'gap-3 px-3'}`;
+    if (isActive) return `${base} bg-blue-600 text-white shadow-md shadow-blue-600/30`;
     return `${base} text-white/80 hover:text-white hover:bg-white/10`;
   }
 
   function navClsLocked() {
-    return `flex items-center py-2.5 rounded-xl text-base font-medium whitespace-nowrap overflow-hidden cursor-not-allowed opacity-40
+    return `flex items-center py-3 rounded-xl text-base font-medium whitespace-nowrap overflow-hidden cursor-not-allowed opacity-40
       text-white/40
-      ${displayCollapsed ? 'justify-center px-0 w-10 mx-auto' : 'gap-3 px-3'}`;
+      ${displayCollapsed ? 'justify-center px-0 w-12 mx-auto' : 'gap-3 px-3'}`;
+  }
+
+  function IconPill({ icon, feature, isActive }) {
+    return (
+      <span className="flex items-center justify-center shrink-0 [&>svg]:w-7 [&>svg]:h-7">
+        {icon}
+      </span>
+    );
   }
 
   const zoomStyle = zoomScale !== 1 ? {
@@ -329,10 +354,10 @@ export default function AppLayout() {
         onMouseEnter={() => collapsed && setSidebarHover(true)}
         onMouseLeave={() => setSidebarHover(false)}
         className={`print:hidden flex flex-col shrink-0 select-none transition-all duration-300 overflow-hidden
-          fixed inset-y-0 left-0 z-[999] w-64
+          fixed inset-y-0 left-0 z-[999] w-72
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
           md:static md:translate-x-0 md:z-auto md:inset-y-auto md:left-auto
-          ${collapsed ? 'md:w-[62px]' : 'md:w-56'}
+          ${collapsed ? 'md:w-[72px]' : 'md:w-64'}
           border-r border-[#2a2a2a]`} style={{ backgroundColor: sidebarBg }}>
 
         {/* Brand / Logo */}
@@ -357,7 +382,7 @@ export default function AppLayout() {
 
         {/* Nav */}
         <nav className={`flex-1 overflow-y-auto py-3 space-y-0.5 ${displayCollapsed ? 'px-1' : 'px-2'}`}>
-          {mainNav.map(({ to, label, icon, highlight, offlineOk, end: endProp }) => {
+          {mainNav.map(({ to, label, icon, highlight, offlineOk, end: endProp, feature }) => {
             const locked = !isOnline && !offlineOk;
             if (locked) {
               return (
@@ -365,7 +390,7 @@ export default function AppLayout() {
                   title={locked ? t('nav.offline_locked') : (displayCollapsed ? label : undefined)}
                   className={navClsLocked()}
                 >
-                  {icon}
+                  <IconPill icon={icon} feature={feature} isActive={false} />
                   {!displayCollapsed && <span className="flex-1 truncate">{label}</span>}
                 </div>
               );
@@ -377,11 +402,13 @@ export default function AppLayout() {
                 onClick={() => { setMobileOpen(false); if (to !== '/sales/create') expandSidebar(); }}
                 className={({ isActive }) => navCls(isActive)}
               >
-                {icon}
-                {!displayCollapsed && <span className="flex-1 truncate">{label}</span>}
-                {!displayCollapsed && highlight && (
-                  <span className="text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded-md">POS</span>
-                )}
+                {({ isActive }) => (<>
+                  <IconPill icon={icon} feature={feature} isActive={isActive} />
+                  {!displayCollapsed && <span className="flex-1 truncate">{label}</span>}
+                  {!displayCollapsed && highlight && (
+                    <span className="text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded-md">POS</span>
+                  )}
+                </>)}
               </NavLink>
             );
           })}
@@ -394,7 +421,7 @@ export default function AppLayout() {
                   : <p className={`text-xs font-semibold uppercase tracking-widest text-slate-500`}>{t('nav.management')}</p>
                 }
               </div>
-              {mgmtNav.map(({ to, label, icon, offlineOk }) => {
+              {mgmtNav.map(({ to, label, icon, offlineOk, feature }) => {
                 const locked = !isOnline && !offlineOk;
                 if (locked) {
                   return (
@@ -402,7 +429,7 @@ export default function AppLayout() {
                       title={locked ? t('nav.offline_locked') : (displayCollapsed ? label : undefined)}
                       className={navClsLocked()}
                     >
-                      {icon}
+                      <IconPill icon={icon} feature={feature} isActive={false} />
                       {!displayCollapsed && <span className="flex-1 truncate">{label}</span>}
                     </div>
                   );
@@ -414,8 +441,10 @@ export default function AppLayout() {
                     onClick={() => { setMobileOpen(false); expandSidebar(); }}
                     className={({ isActive }) => navCls(isActive)}
                   >
-                    {icon}
-                    {!displayCollapsed && <span className="flex-1 truncate">{label}</span>}
+                    {({ isActive }) => (<>
+                      <IconPill icon={icon} feature={feature} isActive={isActive} />
+                      {!displayCollapsed && <span className="flex-1 truncate">{label}</span>}
+                    </>)}
                   </NavLink>
                 );
               })}
@@ -427,8 +456,10 @@ export default function AppLayout() {
               onClick={() => { setMobileOpen(false); expandSidebar(); }}
               className={({ isActive }) => navCls(isActive)}
             >
-              {Icons.accounting}
-              {!displayCollapsed && <span className="flex-1 truncate">Accounting</span>}
+              {({ isActive }) => (<>
+                <IconPill icon={Icons.accounting} feature="accounting" isActive={isActive} />
+                {!displayCollapsed && <span className="flex-1 truncate">Accounting</span>}
+              </>)}
             </NavLink>
           )}
 
@@ -439,8 +470,10 @@ export default function AppLayout() {
               onClick={() => { setMobileOpen(false); expandSidebar(); }}
               className={({ isActive }) => navCls(isActive)}
             >
-              {Icons.scale}
-              {!displayCollapsed && <span className="flex-1 truncate">Scale</span>}
+              {({ isActive }) => (<>
+                <IconPill icon={Icons.scale} feature="scale" isActive={isActive} />
+                {!displayCollapsed && <span className="flex-1 truncate">Scale</span>}
+              </>)}
             </NavLink>
           )}
           {isAdmin && (
@@ -449,8 +482,10 @@ export default function AppLayout() {
               onClick={() => { setMobileOpen(false); expandSidebar(); }}
               className={({ isActive }) => navCls(isActive)}
             >
-              <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m-6 8a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4"/></svg>
-              {!displayCollapsed && <span className="flex-1 truncate">Provision Tenant</span>}
+              {({ isActive }) => (<>
+                <IconPill icon={<svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m-6 8a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4"/></svg>} feature="settings" isActive={isActive} />
+                {!displayCollapsed && <span className="flex-1 truncate">Provision Tenant</span>}
+              </>)}
             </NavLink>
           )}
         </nav>
@@ -480,7 +515,7 @@ export default function AppLayout() {
         <div
           onMouseEnter={() => setSidebarHover(true)}
           onMouseLeave={() => setSidebarHover(false)}
-          className="fixed inset-y-0 left-0 w-56 flex flex-col select-none border-r border-[#2a2a2a] shadow-2xl shadow-black/70 z-[99999]"
+          className="fixed inset-y-0 left-0 w-64 flex flex-col select-none border-r border-[#2a2a2a] shadow-2xl shadow-black/70 z-[99999]"
           style={{
             backgroundColor: sidebarBg,
             transform: sidebarHover ? 'translateX(0)' : 'translateX(-100%)',
@@ -501,21 +536,23 @@ export default function AppLayout() {
           </div>
           {/* Nav */}
           <nav className="flex-1 overflow-y-auto py-3 space-y-0.5 px-2">
-            {mainNav.map(({ to, label, icon, highlight, offlineOk, end: endProp }) => {
+            {mainNav.map(({ to, label, icon, highlight, offlineOk, end: endProp, feature }) => {
               const locked = !isOnline && !offlineOk;
               if (locked) return (
-                <div key={to} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium whitespace-nowrap cursor-not-allowed opacity-40 text-white/40">
-                  {icon}<span className="flex-1 truncate">{label}</span>
+                <div key={to} className="flex items-center gap-3 px-3 py-3 rounded-xl text-base font-medium whitespace-nowrap cursor-not-allowed opacity-40 text-white/40">
+                  <IconPill icon={icon} feature={feature} isActive={false} /><span className="flex-1 truncate">{label}</span>
                 </div>
               );
               return (
                 <NavLink key={to} to={to}
                   end={endProp || to === '/sales' || to === '/dashboard' || to === '/settings' || to === '/invoices'}
                   onClick={() => setSidebarHover(false)}
-                  className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
-                    ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
-                  {icon}<span className="flex-1 truncate">{label}</span>
-                  {highlight && <span className="text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded-md">POS</span>}
+                  className={({ isActive }) => `flex items-center gap-3 px-3 py-3 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
+                    ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
+                  {({ isActive }) => (<>
+                    <IconPill icon={icon} feature={feature} isActive={isActive} /><span className="flex-1 truncate">{label}</span>
+                    {highlight && <span className="text-[10px] font-bold bg-white/20 px-1.5 py-0.5 rounded-md">POS</span>}
+                  </>)}
                 </NavLink>
               );
             })}
@@ -524,19 +561,21 @@ export default function AppLayout() {
                 <div className="px-3 pt-4 pb-1.5">
                   <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">{t('nav.management')}</p>
                 </div>
-                {mgmtNav.map(({ to, label, icon, offlineOk }) => {
+                {mgmtNav.map(({ to, label, icon, offlineOk, feature }) => {
                   const locked = !isOnline && !offlineOk;
                   if (locked) return (
-                    <div key={to} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium cursor-not-allowed opacity-40 text-white/40">
-                      {icon}<span className="flex-1 truncate">{label}</span>
+                    <div key={to} className="flex items-center gap-3 px-3 py-3 rounded-xl text-base font-medium cursor-not-allowed opacity-40 text-white/40">
+                      <IconPill icon={icon} feature={feature} isActive={false} /><span className="flex-1 truncate">{label}</span>
                     </div>
                   );
                   return (
                     <NavLink key={to} to={to} end={to === '/settings'}
                       onClick={() => setSidebarHover(false)}
-                      className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
-                        ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
-                      {icon}<span className="flex-1 truncate">{label}</span>
+                      className={({ isActive }) => `flex items-center gap-3 px-3 py-3 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
+                        ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
+                      {({ isActive }) => (<>
+                        <IconPill icon={icon} feature={feature} isActive={isActive} /><span className="flex-1 truncate">{label}</span>
+                      </>)}
                     </NavLink>
                   );
                 })}
@@ -544,26 +583,24 @@ export default function AppLayout() {
             )}
             {extState?.accounting?.enabled && (
               <NavLink to="/accounting" onClick={() => setSidebarHover(false)}
-                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
-                  ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
-                {Icons.accounting}<span className="flex-1 truncate">Accounting</span>
+                className={({ isActive }) => `flex items-center gap-3 px-3 py-3 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
+                  ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
+                {({ isActive }) => (<><IconPill icon={Icons.accounting} feature="accounting" isActive={isActive} /><span className="flex-1 truncate">Accounting</span></>)}
               </NavLink>
             )}
 
             {isAdmin && (
               <NavLink to="/settings/scale" onClick={() => setSidebarHover(false)}
-                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
-                  ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
-                {Icons.scale}
-                <span className="flex-1 truncate">Scale</span>
+                className={({ isActive }) => `flex items-center gap-3 px-3 py-3 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
+                  ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
+                {({ isActive }) => (<><IconPill icon={Icons.scale} feature="scale" isActive={isActive} /><span className="flex-1 truncate">Scale</span></>)}
               </NavLink>
             )}
             {isAdmin && (
               <NavLink to="/admin/provision-tenant" onClick={() => setSidebarHover(false)}
-                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
-                  ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
-                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m-6 8a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4"/></svg>
-                <span className="flex-1 truncate">Provision Tenant</span>
+                className={({ isActive }) => `flex items-center gap-3 px-3 py-3 rounded-xl text-base font-medium transition-all duration-150 whitespace-nowrap
+                  ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-white/80 hover:text-white hover:bg-white/10'}`}>
+                {({ isActive }) => (<><IconPill icon={<svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m-6 8a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 1 0 0-4m0 4a2 2 0 1 1 0-4m0 4v2m0-6V4"/></svg>} feature="settings" isActive={isActive} /><span className="flex-1 truncate">Provision Tenant</span></>)}
               </NavLink>
             )}
           </nav>

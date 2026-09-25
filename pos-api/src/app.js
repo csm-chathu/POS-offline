@@ -121,6 +121,7 @@ async function runMigrations(sequelize) {
   // Add future schema migrations here — they run once and are never repeated
   const migrations = [
     { name: '002_remove_duplicate_pos_feature', sql: `DELETE FROM features WHERE \`key\` = 'pos'` },
+    { name: '003_categories_add_image', sql: `ALTER TABLE categories ADD COLUMN image VARCHAR(512) NULL` },
   ];
 
   for (const m of migrations) {

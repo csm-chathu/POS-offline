@@ -48,7 +48,8 @@ router.post('/', auth, async (req, res) => {
   try {
     const name = String(req.body.name || '').trim();
     if (!name) return res.status(422).json({ error: 'Name is required' });
-    const cat = await req.models.Category.create({ name });
+    const image = req.body.image || null;
+    const cat = await req.models.Category.create({ name, image });
     res.status(201).json(cat);
   } catch (e) { res.status(422).json({ error: e.message }); }
 });
@@ -60,7 +61,9 @@ router.put('/:id', auth, async (req, res) => {
     if (!cat) return res.status(404).json({ error: 'Not found' });
     const name = String(req.body.name || '').trim();
     if (!name) return res.status(422).json({ error: 'Name is required' });
-    await cat.update({ name });
+    const updates = { name };
+    if ('image' in req.body) updates.image = req.body.image || null;
+    await cat.update(updates);
     res.json(cat);
   } catch (e) { res.status(422).json({ error: e.message }); }
 });

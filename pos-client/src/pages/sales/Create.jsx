@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectCurrentUser, selectRole, selectToken } from '../../features/auth/authSlice';
 import { useCreateSaleMutation, useReturnSaleMutation } from '../../features/sales/salesApi';
 import { useGetExtensionsQuery, useSendSmsReceiptMutation } from '../../features/extensions/extensionsApi';
+import { useGetCategoriesQuery } from '../../features/categories/categoriesApi';
 import useProductCache from '../../hooks/useProductCache';
 import { useConnectivity } from '../../contexts/ConnectivityContext';
 import { enqueueOfflineSale, getPendingCount, OFFLINE_LIMIT } from '../../services/offlineQueue';
@@ -315,7 +316,7 @@ function Receipt({ sale, settings, user, onClose }) {
     html, body {
       font-family: ${isSinhala ? "'Noto Sans Sinhala', sans-serif" : "'Courier New', Courier, monospace"};
       font-size: 13px;
-      font-weight: 900;
+      font-weight: 700;
       width: 100%;
       max-width: 80mm;
       color: #000;
@@ -324,24 +325,24 @@ function Receipt({ sale, settings, user, onClose }) {
     }
     body { padding: 5mm 3mm; }
     .logo { width:56px; height:56px; object-fit:contain; margin:0 auto 6px; display:block; border-radius:50%; }
-    .shop-name { font-size:16px; font-weight:900; text-align:center; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; word-break:break-word; }
-    .shop-meta { font-size:12px; font-weight:900; text-align:center; line-height:1.6; word-break:break-word; }
+    .shop-name { font-size:16px; font-weight:700; text-align:center; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; word-break:break-word; }
+    .shop-meta { font-size:12px; font-weight:700; text-align:center; line-height:1.6; word-break:break-word; }
     .divider { border:none; border-top:2px solid #000; margin:8px 0; }
     .row { display:flex; justify-content:space-between; gap:6px; padding:3px 0; font-size:12px; }
     .row span:first-child { flex-shrink:0; }
     .row span:last-child { text-align:right; word-break:break-word; min-width:0; }
-    .col-header { display:flex; justify-content:flex-end; font-weight:900; padding:4px 0 3px; border-top:2px solid #000; border-bottom:2px solid #000; margin:6px 0; font-size:12px; }
+    .col-header { display:flex; justify-content:flex-end; font-weight:700; padding:4px 0 3px; border-top:2px solid #000; border-bottom:2px solid #000; margin:6px 0; font-size:12px; }
     .col-head-prices { display:grid; grid-template-columns: 30px repeat(3, 1fr); gap:8px; min-width:168px; text-align:right; }
-    .item-row { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; font-weight:900; padding-top:5px; font-size:13px; }
+    .item-row { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; font-weight:700; padding-top:5px; font-size:13px; }
     .item-name { flex:1; min-width:0; word-break:break-word; overflow-wrap:break-word; }
-    .item-data { display:grid; grid-template-columns: 30px repeat(3, 1fr); gap:8px; text-align:right; padding:2px 0 5px; font-size:12px; font-weight:900; }
+    .item-data { display:grid; grid-template-columns: 30px repeat(3, 1fr); gap:8px; text-align:right; padding:2px 0 5px; font-size:12px; font-weight:700; }
     .qty-col { text-align:left; }
     .orig-col, .our-col, .line-col { text-align:right; }
     .disc-box { border:2px solid #000; border-radius:4px; padding:3px 8px; display:flex; justify-content:space-between; gap:6px; margin:5px 0; }
-    .total-row { display:flex; justify-content:space-between; align-items:baseline; gap:6px; font-weight:900; font-size:15px; padding:6px 0 4px; border-top:2px solid #000; margin-top:4px; }
-    .paid-row { display:flex; justify-content:space-between; gap:6px; padding:3px 0; font-weight:900; font-size:12px; }
-    .change-row { display:flex; justify-content:space-between; gap:6px; font-weight:900; padding:3px 0; font-size:13px; }
-    .footer { text-align:center; margin-top:10px; font-size:12px; font-weight:900; line-height:1.8; word-break:break-word; }
+    .total-row { display:flex; justify-content:space-between; align-items:baseline; gap:6px; font-weight:700; font-size:15px; padding:6px 0 4px; border-top:2px solid #000; margin-top:4px; }
+    .paid-row { display:flex; justify-content:space-between; gap:6px; padding:3px 0; font-weight:700; font-size:12px; }
+    .change-row { display:flex; justify-content:space-between; gap:6px; font-weight:700; padding:3px 0; font-size:13px; }
+    .footer { text-align:center; margin-top:10px; font-size:12px; font-weight:700; line-height:1.8; word-break:break-word; }
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
       @page { margin: 0; size: 80mm auto; }
@@ -352,10 +353,7 @@ function Receipt({ sale, settings, user, onClose }) {
 <body>
   ${settings?.shop_logo ? `<img class="logo" src="${settings.shop_logo}" alt="logo">` : ''}
   <div class="shop-name">${settings?.shop_name || 'LMUC POS'}</div>
-  <div class="shop-meta">
-    ${settings?.address ? settings.address + '<br>' : ''}
-    ${settings?.phone || ''}
-  </div>
+  ${(settings?.address || settings?.phone) ? `<div class="shop-meta">${settings?.address ? settings.address + '<br>' : ''}${settings?.phone || ''}</div>` : ''}
   <hr class="divider">
   <div class="row"><span>${rl('th.invoice')}</span><span>${sale.invoice_no}</span></div>
   <div class="row"><span>${rl('th.date')}</span><span>${fmtDate(sale.created_at)} ${fmtTime(sale.created_at)}</span></div>
@@ -618,6 +616,9 @@ export default function SalesCreate() {
   const [returnInvoiceNo, setReturnInvoiceNo] = useState('');
   const [returnSaleId, setReturnSaleId] = useState(null);
 
+  // Categories from API
+  const { data: allCategories = [] } = useGetCategoriesQuery(undefined, { skip: !isOnline });
+
   // SMS receipt extension
   const { data: extState = {} } = useGetExtensionsQuery(undefined, { skip: !isOnline });
   const [sendSms] = useSendSmsReceiptMutation();
@@ -658,10 +659,12 @@ export default function SalesCreate() {
 
   // ─── Derived ─────────────────────────────────────────────────────────────────
   const categories = useMemo(() => {
+    if (allCategories.length > 0) return [...allCategories].sort((a, b) => a.name.localeCompare(b.name));
+    // offline fallback: derive from loaded products
     const map = new Map();
     products.forEach(p => { if (p.category_id && p.category?.name) map.set(p.category_id, p.category.name); });
     return [...map.entries()].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
-  }, [products]);
+  }, [allCategories, products]);
 
   const dropdownItems = useMemo(() => {
     let base = selectedCategory ? products.filter(p => p.category_id === selectedCategory) : products;
@@ -674,11 +677,6 @@ export default function SalesCreate() {
     ).slice(0, 20);
   }, [query, products, selectedCategory]);
 
-  const fastProducts = useMemo(() => {
-    const base = selectedCategory ? products.filter(p => p.category_id === selectedCategory) : products;
-    const fast = base.filter(p => p.is_fast_moving);
-    return (fast.length > 0 ? fast : base).slice(0, 6);
-  }, [products, selectedCategory]);
 
   const subtotal    = cart.reduce((s, i) => s + i.qty * i.unit_price, 0);
   const lineDisc    = cart.reduce((s, i) => s + (i.discount || 0), 0);
@@ -1166,30 +1164,30 @@ export default function SalesCreate() {
       )}
 
       {/* ── Top header bar ── */}
-      <div className="bg-slate-900 dark:bg-black border-b border-slate-700 dark:border-[#222] px-3 h-12 flex items-center justify-between shrink-0 gap-2">
+      <div className="bg-white border-b border-slate-200 px-3 h-12 flex items-center justify-between shrink-0 gap-2">
         <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => navigate('/sales')} className="text-slate-400 hover:text-white transition-colors">{Icon.back}</button>
-          <button onClick={() => navigate('/dashboard')} title="Home" className="text-slate-400 hover:text-white transition-colors">{Icon.home}</button>
-          <h1 className="font-bold text-white text-sm hidden sm:block">{t('page.new_sale')}</h1>
+          <button onClick={() => navigate('/sales')} className="text-slate-500 hover:text-slate-800 transition-colors">{Icon.back}</button>
+          <button onClick={() => navigate('/dashboard')} title="Home" className="text-slate-500 hover:text-slate-800 transition-colors">{Icon.home}</button>
+          <h1 className="font-bold text-slate-800 text-sm hidden sm:block">{t('page.new_sale')}</h1>
         </div>
 
         {/* Shortcut pills — desktop only */}
         <div className="hidden lg:flex items-center gap-1.5 text-xs">
           {[['F1', t('btn.search')],['F2', t('lbl.cash')],['F3', t('lbl.card')],['F4', t('lbl.credit')],['F5','Split'],['F10', t('btn.complete')]].map(([k,l]) => (
-            <span key={k} className="bg-slate-800 text-slate-300 rounded px-1.5 py-0.5 font-medium">
-              <span className="text-slate-500">{k} </span>{l}
+            <span key={k} className="bg-slate-100 text-slate-700 rounded px-1.5 py-0.5 font-medium border border-slate-200">
+              <span className="text-slate-400">{k} </span>{l}
             </span>
           ))}
         </div>
 
         {/* Mobile tab switcher */}
-        <div className="flex lg:hidden rounded-lg border border-slate-700 overflow-hidden text-xs font-bold">
+        <div className="flex lg:hidden rounded-lg border border-slate-200 overflow-hidden text-xs font-bold">
           <button onClick={() => setMobileTab('cart')}
-            className={`px-4 py-1.5 transition-colors ${mobileTab === 'cart' ? 'bg-slate-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+            className={`px-4 py-1.5 transition-colors ${mobileTab === 'cart' ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600'}`}>
             {t('pos.add_products')}
           </button>
           <button onClick={() => setMobileTab('pay')}
-            className={`px-4 py-1.5 transition-colors border-l border-slate-700 ${mobileTab === 'pay' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+            className={`px-4 py-1.5 transition-colors border-l border-slate-200 ${mobileTab === 'pay' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
             {t('pos.payment_method_label')}
           </button>
         </div>
@@ -1213,14 +1211,16 @@ export default function SalesCreate() {
             </button>
           )}
 
-          <button onClick={invalidate} className="text-slate-400 hover:text-white p-1.5 hover:bg-slate-700 rounded-lg transition-colors" title="Refresh products">{Icon.refresh}</button>
+          <button onClick={invalidate} className="text-slate-500 hover:text-slate-800 p-1.5 hover:bg-slate-100 rounded-lg transition-colors" title="Refresh products">{Icon.refresh}</button>
 
-          {/* User avatar */}
-          <div className="flex items-center gap-1.5 pl-1.5 border-l border-slate-700">
+          {/* User avatar + Logout */}
+          <div className="flex items-center gap-1.5 pl-1.5 border-l border-slate-200">
             <div className="w-7 h-7 rounded-full bg-green-500 text-white text-xs font-bold flex items-center justify-center shrink-0">
               {user?.name?.[0]?.toUpperCase() || 'U'}
             </div>
-            <button onClick={handleLogout} className="text-slate-400 hover:text-white p-1 hover:bg-slate-700 rounded-lg transition-colors">{Icon.logout}</button>
+            <button onClick={handleLogout} className="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors">
+              {Icon.logout} <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </div>
       </div>
@@ -1230,7 +1230,7 @@ export default function SalesCreate() {
 
         {/* ═══ LEFT PANEL (Cart / Products) ════════════════════════════════════ */}
         <div className={`flex flex-col min-w-0 overflow-hidden
-          w-full lg:w-[65%]
+          w-full lg:w-[82%]
           ${mobileTab === 'pay' ? 'hidden lg:flex' : 'flex'}`}>
 
           {/* Section header + search + tabs */}
@@ -1258,7 +1258,7 @@ export default function SalesCreate() {
                     }
                   }}
                   placeholder="Barcode…"
-                  className="w-full pl-9 pr-2 py-2 rounded-xl border-2 border-blue-300 bg-blue-50 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-blue-300"
+                  className="w-full pl-9 pr-2 py-3 rounded-xl border-2 border-blue-300 bg-blue-50 text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-blue-300"
                 />
               </div>
 
@@ -1280,7 +1280,7 @@ export default function SalesCreate() {
                   onKeyDown={onSearchKeyDown}
                   placeholder={ready ? t('pos.search_product') : t('lbl.loading')}
                   readOnly={!ready}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-400 bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  className="w-full pl-9 pr-3 py-3 rounded-xl border border-slate-400 bg-white text-base outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                 />
                 {showDrop && (
                   <ProductDropdown items={dropdownItems} activeIdx={activeIdx}
@@ -1289,17 +1289,17 @@ export default function SalesCreate() {
               </div>
               <div className="flex gap-1.5 shrink-0">
                 <button onClick={() => setPriceMode('retail')}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                  className={`flex items-center gap-1.5 px-4 py-3 rounded-lg text-sm font-semibold transition-colors ${
                     priceMode === 'retail' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-300'}`}>
                   {Icon.retail} {t('pos.retail_mode')}
                 </button>
                 <button onClick={() => setPriceMode('wholesale')}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                  className={`flex items-center gap-1.5 px-4 py-3 rounded-lg text-sm font-semibold transition-colors ${
                     priceMode === 'wholesale' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-300'}`}>
                   {Icon.tag} {t('pos.wholesale_mode')}
                 </button>
                 <button onClick={() => setCustom({ name: '', price: '' })}
-                  className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold bg-white text-slate-600 hover:bg-slate-50 border border-slate-300 transition-colors">
+                  className="flex items-center gap-1 px-4 py-3 rounded-lg text-sm font-semibold bg-white text-slate-600 hover:bg-slate-50 border border-slate-300 transition-colors">
                   + Custom
                 </button>
               </div>
@@ -1312,21 +1312,6 @@ export default function SalesCreate() {
               </div>
             )}
 
-            {/* Category chips */}
-            {categories.length > 0 && (
-              <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
-                <button onClick={() => setSelectedCategory(null)}
-                  className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${!selectedCategory ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50'}`}>
-                  All
-                </button>
-                {categories.map(c => (
-                  <button key={c.id} onClick={() => setSelectedCategory(selectedCategory === c.id ? null : c.id)}
-                    className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${selectedCategory === c.id ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50'}`}>
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {err && (
               <div className="px-3 py-1.5 bg-red-50 border border-red-200 text-red-600 text-xs font-medium rounded-lg">{err}</div>
@@ -1391,296 +1376,194 @@ export default function SalesCreate() {
             )}
           </div>
 
-        </div>
+          {/* Fixed bottom: Total + Paid + Action buttons */}
+          <div className="sticky bottom-0 bg-white border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] px-4 py-3 shrink-0 space-y-2">
 
-        {/* ═══ RIGHT PANEL (Payment) ═══════════════════════════════════════════ */}
-        <div className={`bg-slate-50 border-l border-slate-200 flex-col shrink-0 overflow-y-auto
-          w-full lg:w-[35%]
-          ${mobileTab === 'cart' ? 'hidden lg:flex' : 'flex'}`}>
+            {/* Combined box: payment buttons (left) + totals (right) inline */}
+            <div className="border-2 border-slate-200 rounded-xl px-4 py-3 flex gap-4 items-stretch">
 
-          {/* Discount + Grand Total */}
-          <div className="px-4 pt-4 pb-3 border-b border-slate-300">
-            {/* Discount row */}
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-sm font-bold text-orange-500 w-20 shrink-0">{t('lbl.discount')}</span>
-              <input type="number" min="0" step="0.01" value={billDiscount}
-                onChange={e => setBillDisc(e.target.value)} placeholder="0"
-                className="w-20 rounded-lg border border-slate-400 px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-orange-400 text-right" />
-              <button onClick={() => setDiscType('amount')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${discType === 'amount' ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>Rs</button>
-              {[0, 5, 10, 15, 20].map(pct => (
-                <button key={pct} onClick={() => { if (pct === 0) { setBillDisc('0'); setDiscType('percent'); } else { setDiscType('percent'); setBillDisc(String(pct)); } }}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors ${discType === 'percent' && billDiscount === String(pct) ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-100 text-slate-700 border-slate-800 hover:bg-slate-200'}`}>
-                  {pct === 0 ? '0' : `${pct}%`}
-                </button>
-              ))}
-            </div>
-
-            {totalDisc > 0 && (
-              <div className="flex justify-between text-xs text-red-500 mt-1 px-1">
-                <span>Discount applied</span><span>- {fmtAmt(totalDisc)}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Payment method */}
-          <div className="px-4 py-3 border-b border-slate-300">
-            <Step n="2" label={t('pos.payment_method_label').toUpperCase()} />
-            <div className="flex rounded-2xl border-2 border-slate-300 overflow-hidden bg-white">
-              {[
-                { id: 'cash',   label: t('lbl.cash'),   shortcut: 'F2', icon: Icon.cash,   active: 'bg-green-500 text-white' },
-                { id: 'card',   label: t('lbl.card'),   shortcut: 'F3', icon: Icon.card,   active: 'bg-blue-500 text-white' },
-                { id: 'credit', label: t('lbl.credit'), shortcut: 'F4', icon: Icon.credit, active: 'bg-orange-500 text-white' },
-                { id: 'split',  label: 'Split',          shortcut: null,  icon: Icon.split,  active: 'bg-violet-500 text-white' },
-              ].map((m, i, arr) => (
-                <button key={m.id} onClick={() => setPayMethod(m.id)}
-                  className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 lg:py-4 text-sm font-semibold transition-all
-                    ${i < arr.length - 1 ? 'border-r border-slate-300' : ''}
-                    ${payMethod === m.id
-                      ? `${m.active} shadow-inner`
-                      : 'text-slate-500 hover:bg-slate-50'
-                    }`}>
-                  {m.icon}
-                  <span className="flex items-center gap-1">
-                    {m.label}
-                    {m.shortcut && <span className="text-[10px] opacity-60">[{m.shortcut}]</span>}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Cash paid / customer */}
-          <div className="px-4 py-3 border-b border-slate-300">
-            <Step n="3" label={payMethod === 'cash' ? t('pos.cash_paid_label').toUpperCase() : payMethod === 'card' ? 'CARD DETAILS' : payMethod === 'credit' ? t('lbl.credit').toUpperCase() : 'SPLIT PAYMENT'} />
-
-            {/* Customer + Cash paid */}
-            {payMethod === 'cash' ? (
-              <div className="space-y-2 mb-2">
-                {/* Customer */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('lbl.customer')}</span>
-                    <button onClick={() => setQcForm({ name: '', phone: '' })}
-                      className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold transition-colors">
-                      {Icon.user} {t('cust.quick_add')}
+              {/* LEFT: payment method buttons — 40% */}
+              <div className="flex flex-col gap-2 w-[40%] shrink-0">
+                <div className="flex gap-2">
+                  {[
+                    { id: 'cash',   label: t('lbl.cash'),   shortcut: 'F2', icon: Icon.cash,   active: 'bg-green-600',  inactive: 'bg-green-500 hover:bg-green-600'   },
+                    { id: 'card',   label: t('lbl.card'),   shortcut: 'F3', icon: Icon.card,   active: 'bg-blue-700',   inactive: 'bg-blue-500 hover:bg-blue-600'    },
+                    { id: 'credit', label: t('lbl.credit'), shortcut: 'F4', icon: Icon.credit, active: 'bg-orange-600', inactive: 'bg-orange-500 hover:bg-orange-600' },
+                    { id: 'split',  label: 'Split',          shortcut: null,  icon: Icon.split,  active: 'bg-violet-700', inactive: 'bg-violet-600 hover:bg-violet-700' },
+                  ].map(m => (
+                    <button key={m.id} onClick={() => setPayMethod(m.id)}
+                      className={`flex-1 aspect-square flex flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-bold transition-all shadow-sm text-white
+                        ${payMethod === m.id ? `${m.active} shadow-inner ring-2 ring-white/30` : m.inactive}`}>
+                      <span className="[&>svg]:w-7 [&>svg]:h-7">{m.icon}</span>
+                      <span className="text-sm font-extrabold leading-none">{m.label}</span>
+                      {m.shortcut && <span className="text-[10px] opacity-75">[{m.shortcut}]</span>}
                     </button>
-                  </div>
-                  <div className="relative">
-                    <input value={custQuery}
-                      onChange={e => { setCustQuery(e.target.value); setShowCust(true); }}
-                      onFocus={() => setShowCust(true)}
-                      onBlur={() => setTimeout(() => setShowCust(false), 150)}
-                      placeholder={t('lbl.select_customer')}
-                      className="w-full rounded-lg border border-slate-400 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
-                    {customer && (
-                      <button onClick={() => { setCustomer(null); setCustQuery(''); }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-lg">&times;</button>
-                    )}
-                    {showCustDrop && filteredCusts.length > 0 && (
-                      <div className="absolute bottom-full left-0 right-0 z-40 bg-white rounded-xl shadow-xl border border-slate-200 max-h-40 overflow-y-auto mb-1">
-                        {filteredCusts.map(c => (
-                          <button key={c.id} onMouseDown={() => { setCustomer(c); setCustQuery(c.name); setShowCust(false); setCustErr(''); }}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 border-b border-slate-50 last:border-0">
-                            <p className="font-semibold">{c.name}</p>
-                            {c.phone && <p className="text-xs text-slate-400">{c.phone}</p>}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {custErr && <p className="text-xs text-red-500 mt-1 font-medium">{custErr}</p>}
+                  ))}
                 </div>
-
-                {/* Grand total + Cash paid inline */}
-                <div className="flex items-start gap-3">
-                  <div className="flex-1">
-                    <span className="text-sm font-black text-slate-700 uppercase tracking-wide block mb-1">{t('lbl.grand_total')} (Rs.)</span>
-                    <div className="flex items-center justify-end bg-black rounded-xl px-3 py-3.5">
-                      <span className="text-3xl font-extrabold text-white">{Number(total||0).toLocaleString('en-LK',{minimumFractionDigits:2})}</span>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1">{t('pos.cash_paid_label')}</span>
-                    <input ref={cashInputRef} type="text" inputMode="numeric"
-                      value={cashFocused ? cashPaid : (cashPaid ? Number(cashPaid).toLocaleString('en-LK', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '')}
-                      onChange={e => { setCashPaid(e.target.value.replace(/,/g, '')); setShakeInput(false); }}
-                      onFocus={e => { setCashFocused(true); setTimeout(() => e.target.select(), 0); }}
-                      onBlur={() => setCashFocused(false)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleCompleteSale(false, true); }}
-                      placeholder="0.00"
-                      className={`w-full rounded-xl border-2 px-3 py-3.5 text-3xl font-bold text-right outline-none transition-colors ${shakeInput ? 'shake border-red-500 bg-red-50' : 'border-green-500 bg-green-50 focus:border-green-600'}`} />
-                    {change > 0 && <p className="text-xs font-bold text-green-600 text-right mt-1">{t('lbl.change')}: Rs.{fmt(change)}</p>}
-                    {change < 0 && cashNum > 0 && <p className="text-base font-black text-red-500 text-right mt-1">අඩු: Rs.{Number(Math.abs(change)).toLocaleString('en-LK',{minimumFractionDigits:2})}</p>}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* Customer (non-cash modes) */}
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('lbl.customer')}</span>
-                  <button onClick={() => setQcForm({ name: '', phone: '' })}
-                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold transition-colors">
-                    {Icon.user} {t('cust.quick_add')}
-                  </button>
-                </div>
-                <div className="relative mb-3">
-                  <input value={custQuery}
-                    onChange={e => { setCustQuery(e.target.value); setShowCust(true); }}
-                    onFocus={() => setShowCust(true)}
-                    onBlur={() => setTimeout(() => setShowCust(false), 150)}
-                    placeholder={t('lbl.select_customer')}
-                    className="w-full rounded-lg border border-slate-400 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
-                  {customer && (
-                    <button onClick={() => { setCustomer(null); setCustQuery(''); }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-lg">&times;</button>
-                  )}
-                  {showCustDrop && filteredCusts.length > 0 && (
-                    <div className="absolute bottom-full left-0 right-0 z-40 bg-white rounded-xl shadow-xl border border-slate-200 max-h-40 overflow-y-auto mb-1">
-                      {filteredCusts.map(c => (
-                        <button key={c.id} onMouseDown={() => { setCustomer(c); setCustQuery(c.name); setShowCust(false); setCustErr(''); }}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 border-b border-slate-50 last:border-0">
-                          <p className="font-semibold">{c.name}</p>
-                          {c.phone && <p className="text-xs text-slate-400">{c.phone}</p>}
-                        </button>
+                {/* Inline input under payment buttons */}
+                {payMethod === 'card' && (
+                  <input autoFocus type="text" value={cardRef} onChange={e => setCardRef(e.target.value)} placeholder="Card Ref. (optional)"
+                    className="rounded-lg border-2 border-blue-300 bg-blue-50 px-2 py-1.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500" />
+                )}
+                {payMethod === 'split' && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex gap-1 bg-slate-100 rounded-lg p-0.5">
+                      {[['card','Cash+Card'],['credit','Cash+Credit']].map(([mode,lbl]) => (
+                        <button key={mode} onClick={() => setSplitMode(mode)}
+                          className={`flex-1 py-0.5 rounded-md text-xs font-semibold transition-all ${splitMode === mode ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}>{lbl}</button>
                       ))}
                     </div>
-                  )}
-                </div>
-                {custErr && <p className="text-xs text-red-500 mt-1 font-medium">{custErr}</p>}
-              </>
-            )}
-
-            {/* Quick-amount buttons for cash */}
-            {payMethod === 'cash' && (
-              <>
-                <div className="flex gap-1.5 flex-wrap mb-1">
-                  {[100, 500, 1000, 2000, 5000].map(v => (
-                    <button key={v} onClick={() => setCashPaid(String(v))}
-                      className="flex-1 py-1.5 border-2 border-slate-300 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 rounded-lg text-xs font-bold text-slate-600 transition-colors min-w-0">
-                      {v}
-                    </button>
-                  ))}
-                </div>
-                {total > 0 && (
-                  <button onClick={() => setCashPaid(fmt(total))}
-                    className="w-full py-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg text-xs font-semibold text-blue-700 transition-colors">
-                    Exact: {fmtAmt(total)}
-                  </button>
+                    <input autoFocus type="number" min="0" step="0.01" value={splitCash} onChange={e => setSplitCash(e.target.value)} onFocus={e => e.target.select()} placeholder="Cash amount"
+                      className="rounded-lg border-2 border-violet-300 bg-violet-50 px-2 py-1.5 text-sm font-semibold outline-none" />
+                    <p className="text-xs text-slate-600">{splitMode==='card'?'Card':'Credit'}: <strong className="text-violet-700">{fmtAmt(Math.max(0,total-(parseFloat(splitCash)||0)))}</strong></p>
+                  </div>
                 )}
-              </>
-            )}
-
-            {/* Card input */}
-            {payMethod === 'card' && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase">Card Reference No.</label>
-                <input autoFocus type="text" value={cardRef} onChange={e => setCardRef(e.target.value)} placeholder="Optional"
-                  className="w-full rounded-lg border border-slate-400 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-            )}
-
-            {/* Credit */}
-            {payMethod === 'credit' && (
-              <p className="text-sm text-slate-500 bg-orange-50 rounded-xl p-3 text-center">
-                Amount will be added to customer's credit balance.
-                {!customer && <span className="block mt-1 text-red-500 font-semibold text-xs">⚠ {t('pos.credit_warn_msg')}</span>}
-              </p>
-            )}
-
-            {/* Split */}
-            {payMethod === 'split' && (
-              <div className="space-y-2">
-                {/* Mode toggle */}
-                <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
-                  {[['card', 'Cash + Card'], ['credit', 'Cash + Credit']].map(([mode, label]) => (
-                    <button key={mode} type="button" onClick={() => setSplitMode(mode)}
-                      className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${splitMode === mode ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase">Cash Amount</label>
-                  <input autoFocus type="number" min="0" step="0.01" value={splitCash} onChange={e => setSplitCash(e.target.value)}
-                    onFocus={e => e.target.select()}
-                    className="w-full rounded-lg border border-slate-400 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                {splitMode === 'card' ? (
-                  <>
-                    <p className="text-sm text-slate-600">
-                      Card: <strong className="text-blue-700">{fmtAmt(Math.max(0, total - (parseFloat(splitCash) || 0)))}</strong>
-                    </p>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase">Card Reference</label>
-                      <input type="text" value={splitCardRef} onChange={e => setSplitCardRef(e.target.value)}
-                        className="w-full rounded-lg border border-slate-400 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                {payMethod === 'credit' && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-slate-500 uppercase">{t('lbl.customer')}</label>
+                      <button onClick={() => setQcForm({ name:'', phone:'' })} className="text-xs text-blue-600 font-semibold">{t('cust.quick_add')}</button>
                     </div>
-                  </>
-                ) : (
-                  <div className="flex items-center justify-between bg-red-50 rounded-lg px-3 py-2">
-                    <span className="text-xs font-semibold text-slate-500">Credit Balance</span>
-                    <span className="font-bold text-red-600">{fmtAmt(Math.max(0, total - (parseFloat(splitCash) || 0)))}</span>
+                    <div className="relative">
+                      <input value={custQuery} onChange={e => { setCustQuery(e.target.value); setShowCust(true); }} onFocus={() => setShowCust(true)} onBlur={() => setTimeout(() => setShowCust(false), 150)}
+                        placeholder={t('lbl.select_customer')} className="w-full rounded-lg border-2 border-orange-300 bg-orange-50 px-2 py-1.5 text-sm font-semibold outline-none" />
+                      {customer && <button onClick={() => { setCustomer(null); setCustQuery(''); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-lg">&times;</button>}
+                      {showCustDrop && filteredCusts.length > 0 && (
+                        <div className="absolute bottom-full left-0 right-0 z-40 bg-white rounded-xl shadow-xl border border-slate-200 max-h-36 overflow-y-auto mb-1">
+                          {filteredCusts.map(c => (
+                            <button key={c.id} onMouseDown={() => { setCustomer(c); setCustQuery(c.name); setShowCust(false); setCustErr(''); }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-orange-50 border-b border-slate-50 last:border-0">
+                              <p className="font-semibold">{c.name}</p>
+                              {c.phone && <p className="text-xs text-slate-400">{c.phone}</p>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {!customer && <p className="text-xs text-red-500 font-semibold">⚠ {t('pos.credit_warn_msg')}</p>}
                   </div>
                 )}
               </div>
-            )}
-          </div>
 
+              {/* Divider */}
+              <div className="w-px bg-slate-200 self-stretch" />
 
-          {/* Complete Sale */}
-          <div className="px-4 py-4 mt-auto sticky bottom-0 bg-white dark:bg-[#1a1a1a] border-t border-slate-300 dark:border-[#333] shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
-            <div className="flex gap-2 mb-2">
-              {/* Main button */}
-              <button
-                disabled={cart.length === 0 || total === 0 || submitting}
-                onClick={() => handleCompleteSale(false, true)}
-                className="flex-1 flex items-center justify-center gap-2 py-4 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-500 text-white rounded-xl font-bold text-sm transition-colors shadow-lg ring-1 ring-blue-300/60 dark:ring-blue-500/40"
-              >
-                {Icon.print}
-                <span>{t('pos.complete_sale')}</span>
-                <span className="hidden lg:inline ml-1 bg-white/20 text-white text-xs px-1.5 py-0.5 rounded font-bold">F10</span>
-              </button>
-
-              {/* Save only */}
-              <button
-                disabled={cart.length === 0 || total === 0 || submitting}
-                onClick={() => handleCompleteSale(true)}
-                className="flex flex-col items-center justify-center gap-0.5 px-3 py-2 border-2 border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-400 disabled:opacity-40 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors shadow-md"
-              >
-                {Icon.save}
-                <span>{t('btn.save')}</span>
-                <span className="hidden lg:block text-slate-400 font-normal">F11</span>
-              </button>
+              {/* RIGHT: totals — 60% */}
+              <div className="w-[60%] flex flex-col justify-center space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-slate-500 uppercase tracking-wide">{t('lbl.grand_total')}</span>
+                  <span className="text-xl font-extrabold text-slate-800">Rs. {Number(total||0).toLocaleString('en-LK',{minimumFractionDigits:2})}</span>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
+                  <span className="text-sm font-bold text-orange-500 uppercase tracking-wide">{t('lbl.discount')}</span>
+                  <div className="flex items-center gap-2">
+                    <input type="number" min="0" step="0.01" value={billDiscount}
+                      onChange={e => { setBillDisc(e.target.value); setDiscType('amount'); }} placeholder="0"
+                      className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-base font-semibold outline-none focus:ring-1 focus:ring-orange-400 text-right bg-white" />
+                    <span className="text-sm font-bold text-slate-500">Rs</span>
+                    {totalDisc > 0 && <span className="text-sm font-bold text-red-500">-{fmtAmt(totalDisc)}</span>}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
+                  <span className="text-sm font-bold text-green-600 uppercase tracking-wide">{t('pos.cash_paid_label')}</span>
+                  {payMethod === 'cash' ? (
+                    <input ref={cashInputRef} type="text" inputMode="numeric"
+                      value={cashFocused ? cashPaid : (cashPaid ? Number(cashPaid).toLocaleString('en-LK',{minimumFractionDigits:0,maximumFractionDigits:2}) : '')}
+                      onChange={e => { setCashPaid(e.target.value.replace(/,/g,'')); setShakeInput(false); }}
+                      onFocus={e => { setCashFocused(true); setTimeout(() => e.target.select(), 0); }}
+                      onBlur={() => setCashFocused(false)}
+                      onKeyDown={e => { if (e.key==='Enter') handleCompleteSale(false, true); }}
+                      placeholder="0.00"
+                      className={`text-xl font-extrabold bg-transparent outline-none border-b-2 text-right w-40 ${shakeInput ? 'border-red-500 text-red-600' : 'border-green-500 text-green-700'}`} />
+                  ) : (
+                    <span className="text-xl font-extrabold text-green-700">{Number(total||0).toLocaleString('en-LK',{minimumFractionDigits:2})}</span>
+                  )}
+                </div>
+                {payMethod === 'cash' && change > 0 && (
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
+                    <span className="text-sm font-bold text-blue-500 uppercase tracking-wide">{t('lbl.change')}</span>
+                    <span className="text-xl font-extrabold text-blue-700">{Number(change).toLocaleString('en-LK',{minimumFractionDigits:2})}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Hold Bill + Clear Cart */}
+            {/* placeholder closing div that was previously payment row — action buttons below */}
+
+            {/* Row 2: Clear | Hold | Save | Print */}
             <div className="flex gap-2">
-            <button
-              disabled={cart.length === 0}
-              onClick={() => setHoldModal(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-4
-                bg-amber-400 hover:bg-amber-500 text-amber-900
-                dark:bg-transparent dark:border-2 dark:border-amber-400 dark:text-amber-300 dark:hover:bg-amber-400/10
-                disabled:opacity-40 disabled:cursor-not-allowed
-                rounded-xl font-bold text-sm transition-colors shadow-lg"
-            >
-              {Icon.pause} {t('pos.hold_btn')}
-            </button>
-            <button
-              disabled={cart.length === 0}
-              onClick={() => { setCart([]); setCustomer(null); setCustQuery(''); setBillDisc(''); refocus(); }}
-              className="flex items-center justify-center gap-1.5 px-4 py-3
-                bg-red-100 hover:bg-red-200 text-red-700 border border-red-200
-                dark:bg-transparent dark:border dark:border-red-500/60 dark:text-red-400 dark:hover:bg-red-500/10
-                disabled:opacity-40 disabled:cursor-not-allowed
-                rounded-xl font-bold text-sm transition-colors shadow-md"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-              Clear
-            </button>
+              <button disabled={cart.length === 0}
+                onClick={() => { setCart([]); setCustomer(null); setCustQuery(''); setBillDisc(''); refocus(); }}
+                className="w-16 h-16 shrink-0 flex flex-col items-center justify-center gap-1 bg-red-500 hover:bg-red-600 text-white disabled:cursor-not-allowed rounded-xl text-xs font-bold transition-colors shadow-lg">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <span>Clear</span>
+              </button>
+              <button disabled={cart.length === 0} onClick={() => setHoldModal(true)}
+                className="flex-1 flex flex-col items-center justify-center gap-1 py-3 bg-amber-400 hover:bg-amber-500 text-amber-900 disabled:cursor-not-allowed rounded-xl font-bold text-sm transition-colors shadow-lg">
+                {Icon.pause} <span>{t('pos.hold_btn')}</span>
+              </button>
+              <button disabled={cart.length === 0 || total === 0 || submitting} onClick={() => handleCompleteSale(true)}
+                className="w-16 h-16 shrink-0 flex flex-col items-center justify-center gap-1 bg-teal-500 hover:bg-teal-600 text-white disabled:cursor-not-allowed rounded-xl text-xs font-bold transition-colors shadow-lg">
+                {Icon.save} <span>F11</span>
+              </button>
+              <button disabled={cart.length === 0 || total === 0 || submitting} onClick={() => handleCompleteSale(false, true)}
+                className="flex-[2] flex flex-col items-center justify-center gap-1 py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl font-bold text-sm transition-colors shadow-lg disabled:cursor-not-allowed">
+                {Icon.print} <span>{t('pos.complete_sale')} <span className="text-xs opacity-70">F10</span></span>
+              </button>
             </div>
+          </div>
+        </div>
+
+        {/* ═══ RIGHT PANEL (Categories) ══════════════════════════════════════ */}
+        <div className={`bg-slate-50 border-l border-slate-200 flex-col shrink-0 overflow-y-auto
+          w-full lg:w-[18%]
+          ${mobileTab === 'cart' ? 'hidden lg:flex' : 'flex'}`}>
+
+          {/* Category Tiles */}
+          <div className="px-2 py-3 flex-1 overflow-y-auto">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 px-1">🗂 Categories</p>
+            {categories.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center mt-8 px-2">No categories found.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-1.5">
+                {/* All tile */}
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className={`col-span-2 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl border-2 transition-all active:scale-95 text-xs font-bold
+                    ${selectedCategory === null
+                      ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                      : 'bg-white border-slate-100 text-slate-600 hover:border-blue-300 hover:shadow-md'}`}>
+                  All Products
+                </button>
+                {categories.slice(0, 10).map((cat, i) => {
+                  const CAT_GRADIENTS = [
+                    'from-blue-400 to-blue-600', 'from-green-400 to-green-600',
+                    'from-orange-400 to-orange-600', 'from-purple-400 to-purple-600',
+                    'from-rose-400 to-rose-600', 'from-amber-400 to-amber-600',
+                    'from-teal-400 to-teal-600', 'from-indigo-400 to-indigo-600',
+                    'from-pink-400 to-pink-600', 'from-cyan-400 to-cyan-600',
+                  ];
+                  const grad = CAT_GRADIENTS[i % CAT_GRADIENTS.length];
+                  const isActive = selectedCategory === cat.id;
+                  return (
+                    <button key={cat.id} onClick={() => setSelectedCategory(isActive ? null : cat.id)}
+                      className={`w-full overflow-hidden flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border-2 transition-all active:scale-95
+                        ${isActive
+                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          : 'border-slate-100 bg-white hover:border-blue-300 hover:shadow-md'}`}>
+                      {cat.image ? (
+                        <img src={cat.image} alt={cat.name} className="w-14 h-14 object-cover rounded-xl shadow-sm" />
+                      ) : (
+                        <span className={`w-14 h-14 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-extrabold text-2xl shadow-sm`}>
+                          {cat.name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                      <span className={`w-full text-center leading-tight line-clamp-2 break-words font-semibold ${isActive ? 'text-blue-700' : 'text-slate-700'}`} style={{fontSize:'10px'}}>{cat.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

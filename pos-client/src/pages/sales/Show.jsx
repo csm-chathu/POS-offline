@@ -7,6 +7,7 @@ import { selectCurrentUser, selectRole } from '../../features/auth/authSlice';
 import { useLocale } from '../../contexts/LocaleContext';
 import { translations } from '../../i18n/translations';
 import { getApiUrl } from '../../config/runtimeConfig';
+import JsBarcode from 'jsbarcode';
 
 const API = getApiUrl();
 
@@ -53,6 +54,15 @@ export default function SaleShow() {
   const [printing,     setPrinting]     = useState(false);
 
   const autoPrintFiredRef = useRef(false);
+  const barcodeRef = useRef(null);
+
+  useEffect(() => {
+    if (barcodeRef.current && sale?.invoice_no) {
+      JsBarcode(barcodeRef.current, sale.invoice_no, {
+        format: 'CODE128', width: 1.5, height: 40, displayValue: false, margin: 0,
+      });
+    }
+  }, [sale?.invoice_no]);
 
   useEffect(() => {
     fetch(`${API}/api/settings/public`)
@@ -96,6 +106,14 @@ export default function SaleShow() {
     const rl = key => (translations[receiptLang] || translations.en)[key] ?? translations.en[key];
     const minDelay = new Promise(r => setTimeout(r, 2200));
 
+    // Pre-generate barcode SVG inline (no CDN needed — works offline)
+    let barcodeSvg = '';
+    try {
+      const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      JsBarcode(svgEl, sale.invoice_no, { format: 'CODE128', width: is80 ? 1.0 : 1.4, height: 35, displayValue: false, margin: 0 });
+      barcodeSvg = svgEl.outerHTML;
+    } catch {}
+
     let totalSaved = 0;
     const itemsHtml = (sale.items || []).map((item, idx) => {
       const qty = Number(item.qty || 0);
@@ -108,12 +126,13 @@ export default function SaleShow() {
       if (origPrice > unit) totalSaved += (origPrice - unit) * qty;
       return `
       <div class="item-row">
-        <div class="item-name">${item.product_name}</div>
+        <div class="item-name">${idx + 1}) ${item.product_name}</div>
       </div>
       <div class="item-data">
-        <span class="qty-col">${qty}</span>
         <span class="orig-col orig-light">${fmt(origPrice)}</span>
         <span class="our-col">${fmt(ourUnit)}</span>
+        <span class="disc-col">${lineDiscount > 0 ? fmt(lineDiscount) : '-'}</span>
+        <span class="qty-col">${qty}</span>
         <span class="line-col">${fmt(reducedLineTotal)}</span>
       </div>
     `;
@@ -134,10 +153,12 @@ export default function SaleShow() {
   ${isSinhala ? '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@700;800;900&display=swap" rel="stylesheet">' : ''}
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    svg { max-width: 100%; height: auto; }
     html, body {
       font-family: ${isSinhala ? "'Noto Sans Sinhala', sans-serif" : "'Courier New', Courier, monospace"};
-      font-size: ${is80 ? '13px' : '15px'};
-      font-weight: 900;
+      font-size: ${is80 ? '11px' : '13px'};
+      font-weight: 400;
       width: ${is80 ? '72mm' : '210mm'};
       max-width: ${is80 ? '72mm' : '210mm'};
       color: #000;
@@ -147,28 +168,30 @@ export default function SaleShow() {
     body { padding: ${is80 ? '5mm 4mm' : '15mm 20mm'}; }
     .center { text-align:center; }
     .logo { width:${is80 ? '56px' : '72px'}; height:${is80 ? '56px' : '72px'}; object-fit:contain; margin:0 auto 6px; display:block; border-radius:50%; }
-    .shop-name { font-size:${is80 ? '16px' : '22px'}; font-weight:900; text-align:center; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; color:#000; word-break:break-word; }
-    .shop-meta { font-size:${is80 ? '12px' : '14px'}; font-weight:900; text-align:center; color:#000; line-height:1.6; word-break:break-word; }
-    .divider { border:none; border-top:2px solid #000; margin:8px 0; }
-    .row { display:flex; justify-content:space-between; gap:6px; padding:3px 0; font-size:${is80 ? '12px' : '14px'}; color:#000; }
-    .row .label { color:#000; font-weight:900; flex-shrink:0; }
-    .row .value { font-weight:900; color:#000; text-align:right; min-width:0; word-break:break-word; }
-    .col-header { display:grid; grid-template-columns: 30px repeat(3, 1fr); gap:8px; font-weight:900; padding:4px 0 3px; border-top:2px solid #000; border-bottom:2px solid #000; margin:6px 0; font-size:${is80 ? '12px' : '14px'}; color:#000; text-align:right; }
-    .col-header span { white-space:nowrap; }
-    .item-row { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; font-weight:900; padding-top:5px; font-size:${is80 ? '13px' : '15px'}; color:#000; }
-    .item-name { flex:1; min-width:0; word-break:break-word; overflow-wrap:break-word; }
-    .item-data { display:grid; grid-template-columns: 30px repeat(3, 1fr); gap:8px; text-align:right; padding:2px 0 5px; font-size:${is80 ? '12px' : '13px'}; font-weight:900; color:#000; }
-    .qty-col { text-align:left; }
-    .orig-col, .our-col, .line-col { text-align:right; white-space:nowrap; }
-    .orig-light { font-weight: 600; }
-    .disc-box { border:2px solid #000; border-radius:4px; padding:3px 8px; display:flex; justify-content:space-between; gap:6px; margin:5px 0; }
-    .disc-label { color:#000; font-weight:900; flex-shrink:0; }
-    .disc-val { color:#000; font-weight:900; }
-    .total-row { display:flex; justify-content:space-between; align-items:baseline; gap:6px; font-weight:900; font-size:${is80 ? '15px' : '20px'}; padding:6px 0 4px; border-top:2px solid #000; margin-top:4px; color:#000; }
+    .shop-name { font-size:${is80 ? '14px' : '18px'}; font-weight:700; text-align:center; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; color:#000; word-break:break-word; }
+    .shop-meta { font-size:${is80 ? '10px' : '12px'}; font-weight:400; text-align:center; color:#000; line-height:1.6; word-break:break-word; }
+    .divider { border:none; border-top:1px solid #000; margin:6px 0; }
+    .row { display:flex; justify-content:space-between; gap:6px; padding:2px 0; font-size:${is80 ? '10px' : '12px'}; color:#000; }
+    .row .label { color:#000; font-weight:600; flex-shrink:0; text-transform:uppercase; }
+    .row .value { font-weight:500; color:#000; text-align:right; min-width:0; word-break:break-word; }
+    .col-header { display:grid; grid-template-columns: 1fr 1fr 1fr 28px 1fr; gap:0; font-weight:800; padding:0; background:#fff; color:#000; margin:6px 0; font-size:${is80 ? '10px' : '12px'}; text-align:center; text-transform:uppercase; align-items:center; }
+    .col-header span { white-space:normal; line-height:1.2; padding:4px 3px; display:flex; align-items:center; justify-content:center; }
+    .col-header span:last-child { border-right:none; }
+    .item-row { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; font-weight:500; padding-top:4px; font-size:${is80 ? '11px' : '13px'}; color:#000; }
+    .item-name { flex:1; min-width:0; word-break:break-word; overflow-wrap:break-word; font-weight:600; }
+    .item-data { display:grid; grid-template-columns: 1fr 1fr 1fr 28px 1fr; gap:4px; text-align:center; padding:2px 0 4px; font-size:${is80 ? '10px' : '12px'}; font-weight:400; color:#000; }
+    .qty-col { text-align:center; }
+    .orig-col, .our-col, .disc-col { text-align:center; white-space:nowrap; }
+    .line-col { text-align:right; white-space:nowrap; font-weight:600; }
+    .orig-light { font-weight: 400; }
+    .disc-box { border:1px solid #000; border-radius:4px; padding:2px 8px; display:flex; justify-content:space-between; gap:6px; margin:4px 0; }
+    .disc-label { color:#000; font-weight:600; flex-shrink:0; text-transform:uppercase; }
+    .disc-val { color:#000; font-weight:600; }
+    .total-row { display:flex; justify-content:space-between; align-items:baseline; gap:6px; font-weight:700; font-size:${is80 ? '13px' : '16px'}; padding:5px 0 3px; border-top:1px solid #000; margin-top:4px; color:#000; text-transform:uppercase; }
     .total-val { color:#000; flex-shrink:0; }
-    .paid-row { display:flex; justify-content:space-between; gap:6px; padding:3px 0; font-weight:900; font-size:${is80 ? '12px' : '14px'}; color:#000; }
-    .change-row { display:flex; justify-content:space-between; gap:6px; font-weight:900; color:#000; padding:3px 0; font-size:${is80 ? '13px' : '15px'}; }
-    .footer { text-align:center; margin-top:10px; font-size:${is80 ? '12px' : '14px'}; color:#000; font-weight:900; line-height:1.8; word-break:break-word; }
+    .paid-row { display:flex; justify-content:space-between; gap:6px; padding:2px 0; font-weight:400; font-size:${is80 ? '10px' : '12px'}; color:#000; text-transform:uppercase; }
+    .change-row { display:flex; justify-content:space-between; gap:6px; font-weight:600; color:#000; padding:2px 0; font-size:${is80 ? '11px' : '13px'}; text-transform:uppercase; }
+    .footer { text-align:center; margin-top:8px; font-size:${is80 ? '10px' : '12px'}; color:#000; font-weight:400; line-height:1.8; word-break:break-word; }
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
       @page { margin: 0; size: ${is80 ? '72mm auto' : 'A4'}; }
@@ -179,19 +202,13 @@ export default function SaleShow() {
 <body>
   ${shopInfo.shop_logo ? `<img class="logo" src="${shopInfo.shop_logo}" alt="logo">` : ''}
   <div class="shop-name">${shopInfo.shop_name || 'LMUC POS'}</div>
-  <div class="shop-meta">
-    ${shopInfo.address ? shopInfo.address + '<br>' : ''}
-    ${shopInfo.phone || ''}
-  </div>
-  <hr class="divider">
+  ${(shopInfo.address || shopInfo.phone) ? `<div class="shop-meta">${shopInfo.address ? shopInfo.address + '<br>' : ''}${shopInfo.phone || ''}</div>` : ''}
   <div class="row"><span class="label">${rl('th.invoice')}</span><span class="value">${sale.invoice_no}</span></div>
   <div class="row"><span class="label">${rl('th.date')}</span><span class="value">${fmtDate(sale.created_at)} ${fmtTime(sale.created_at)}</span></div>
   <div class="row"><span class="label">${rl('lbl.cashier')}</span><span class="value">${sale.user?.name || '—'}</span></div>
   ${sale.customer?.name ? `<div class="row"><span class="label">${rl('lbl.customer')}</span><span class="value">${sale.customer.name}</span></div>` : ''}
-  <div class="col-header"><span class="qty-col">${rl('th.qty')}</span><span>${rl('lbl.original_price')}</span><span>${rl('lbl.our_price')}</span><span>${rl('th.total')}</span></div>
+  <div class="col-header"><span>${rl('lbl.original_price')}</span><span>${rl('lbl.our_price')}</span><span>${rl('lbl.discount')}</span><span class="qty-col">${rl('th.qty')}</span><span>${rl('th.total')}</span></div>
   ${itemsHtml}
-  <hr class="divider">
-  ${totalSaved > 0 ? `<div class="disc-box"><span class="disc-label">${rl('lbl.you_saved')}</span><span class="disc-val">- ${fmt(totalSaved)}</span></div>` : ''}
   ${parseFloat(sale.discount) > 0 ? `<div class="disc-box"><span class="disc-label">${rl('lbl.earned_profit')}</span><span class="disc-val">- ${fmt(sale.discount)}</span></div>` : ''}
   ${parseFloat(sale.tax) > 0 ? `<div class="row"><span class="label">${rl('lbl.tax')}</span><span>${fmt(sale.tax)}</span></div>` : ''}
   <div class="total-row"><span class="total-label">${rl('lbl.grand_total')}</span><span class="total-val">${currency} ${fmt(sale.total)}</span></div>
@@ -199,6 +216,14 @@ export default function SaleShow() {
   ${paidCard > 0  ? `<div class="paid-row"><span>${rl('lbl.cash_paid')} (${rl('lbl.card')})</span><span>${fmt(paidCard)}</span></div>` : ''}
   ${paidCredit > 0 ? `<div class="paid-row"><span>${rl('lbl.credit')}</span><span>${fmt(paidCredit)}</span></div>` : ''}
   ${change > 0    ? `<div class="change-row"><span>${rl('lbl.change')}</span><span>${fmt(change)}</span></div>` : ''}
+  ${totalSaved > 0 ? `<div class="disc-box" style="flex-direction:column;align-items:center;text-align:center"><span class="disc-label">${rl('lbl.you_saved')}</span><span class="disc-val" style="font-size:1.1em">${fmt(totalSaved)}</span></div>` : ''}
+  <hr class="divider">
+  <div style="text-align:center;margin:6px 0 2px">
+    <div style="display:inline-block;width:75%;overflow:hidden">
+      <svg style="width:100%;height:auto;display:block" viewBox="${barcodeSvg.match(/viewBox="([^"]+)"/)?.[1] || '0 0 200 50'}" preserveAspectRatio="xMidYMid meet">${barcodeSvg.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '')}</svg>
+    </div>
+    <div style="font-size:10px;margin-top:2px;font-family:monospace">${sale.invoice_no}</div>
+  </div>
   <hr class="divider">
   <div class="footer">
     ${shopInfo.receipt_footer || 'Thank you for shopping with us!'}
@@ -397,7 +422,7 @@ export default function SaleShow() {
         <div id="receipt"
           className={`rounded-2xl shadow-md w-full max-w-sm px-8 py-7 transition-colors duration-300
             ${receiptDark ? 'bg-[#1e1e1e] border border-slate-700 text-slate-100' : 'bg-white border border-slate-100 text-black'}`}
-          style={{ fontFamily: "'Outfit', 'Noto Sans Sinhala', sans-serif" }}>
+          style={{ fontFamily: "'Outfit', 'Noto Sans Sinhala', sans-serif", fontWeight: 700 }}>
 
           {/* Shop header */}
           <div className="text-center mb-5">
@@ -430,11 +455,12 @@ export default function SaleShow() {
 
           {/* Items */}
           <div className="mb-3 min-w-0">
-            <div className="grid grid-cols-[40px_1fr_1fr_1fr] gap-2 pl-1 text-sm font-black text-black dark:text-slate-100dark:text-slate-100 border-b-2 border-slate-200 dark:border-slate-600 pb-2 mb-3 text-right min-w-0">
-              <span className="text-left">{rl('th.qty')}</span>
-              <span className="text-right whitespace-nowrap">{rl('lbl.original_price')}</span>
-              <span className="text-right whitespace-nowrap">{rl('lbl.our_price')}</span>
-              <span className="text-right whitespace-nowrap">{rl('th.total')}</span>
+            <div className="grid grid-cols-[1fr_1fr_1fr_40px_1fr] text-xs font-extrabold text-black bg-white mb-3 text-center min-w-0 uppercase items-stretch">
+              <span className="flex items-center justify-center leading-tight whitespace-pre-line px-1 py-2">{rl('lbl.original_price').replace(' ', '\n')}</span>
+              <span className="flex items-center justify-center leading-tight whitespace-pre-line px-1 py-2">{rl('lbl.our_price').replace(' ', '\n')}</span>
+              <span className="flex items-center justify-center leading-tight px-1 py-2">{t('lbl.discount')}</span>
+              <span className="flex items-center justify-center leading-tight px-1 py-2">{rl('th.qty')}</span>
+              <span className="flex items-center justify-center leading-tight px-1 py-2">{rl('th.total')}</span>
             </div>
             {(sale.items || []).map((item, idx) => {
               const qty = Number(item.qty || 0);
@@ -446,11 +472,12 @@ export default function SaleShow() {
               const ourUnit = qty > 0 ? Math.max(0, reducedLineTotal / qty) : unit;
               return (
               <div key={item.id} className="mb-3 min-w-0">
-                <div className="text-sm font-bold text-black dark:text-slate-100dark:text-slate-100 break-words" style={{ overflowWrap: 'anywhere' }}>{item.product_name}</div>
-                <div className="grid grid-cols-[40px_1fr_1fr_1fr] gap-2 text-sm text-black dark:text-slate-100dark:text-slate-200 font-semibold pl-1 mt-0.5 min-w-0 items-center">
-                  <span className="text-left">{qty}</span>
-                  <span className="text-right min-w-0 break-words">{fmt(origPrice)}</span>
-                  <span className="text-right text-black dark:text-slate-100min-w-0 break-words">{fmt(ourUnit)}</span>
+                <div className="text-sm font-bold text-black dark:text-slate-100dark:text-slate-100 break-words" style={{ overflowWrap: 'anywhere' }}>{idx + 1}) {item.product_name}</div>
+                <div className="grid grid-cols-[1fr_1fr_1fr_40px_1fr] gap-1 text-sm text-black dark:text-slate-100dark:text-slate-200 font-semibold mt-0.5 min-w-0 items-center">
+                  <span className="text-center min-w-0 break-words">{fmt(origPrice)}</span>
+                  <span className="text-center text-black dark:text-slate-100min-w-0 break-words">{fmt(ourUnit)}</span>
+                  <span className="text-center min-w-0 break-words">{lineDiscount > 0 ? fmt(lineDiscount) : '-'}</span>
+                  <span className="text-center">{qty}</span>
                   <span className="text-right min-w-0 break-words">{fmt(reducedLineTotal)}</span>
                 </div>
               </div>
@@ -469,12 +496,7 @@ export default function SaleShow() {
                 const qty  = parseFloat(item.qty || 0);
                 return orig > unit ? acc + (orig - unit) * qty : acc;
               }, 0);
-              return saved > 0 ? (
-                <div className="flex justify-between items-center border-2 border-black rounded-lg px-3 py-2">
-                  <span className="text-black font-black text-base">{t('lbl.you_saved')}</span>
-                  <span className="text-black font-black text-xl">{fmt(saved)}</span>
-                </div>
-              ) : null;
+              return null;
             })()}
             {parseFloat(sale.discount) > 0 && (
               <div className="flex justify-between items-center border-2 border-slate-300 rounded-xl px-4 py-3 bg-slate-50">
@@ -491,35 +513,59 @@ export default function SaleShow() {
             )}
 
             <div className="flex justify-between items-baseline pt-1 border-t border-slate-100">
-              <span className="text-base font-black text-black dark:text-slate-100">{t('lbl.grand_total')}</span>
+              <span className="text-base font-black text-black dark:text-slate-100 uppercase">{t('lbl.grand_total')}</span>
               <span className="text-xl font-black text-black dark:text-slate-100">{currency} {fmt(sale.total)}</span>
             </div>
 
             {paidCash   > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-black font-semibold">{t('lbl.cash_paid')} ({t('lbl.cash')})</span>
+                <span className="text-black font-semibold uppercase">{t('lbl.cash_paid')} ({t('lbl.cash')})</span>
                 <span className="font-bold text-black dark:text-slate-100">{fmt(cashGiven)}</span>
               </div>
             )}
             {paidCard   > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-black font-semibold">{t('lbl.cash_paid')} ({t('lbl.card')})</span>
+                <span className="text-black font-semibold uppercase">{t('lbl.cash_paid')} ({t('lbl.card')})</span>
                 <span className="font-bold text-black dark:text-slate-100">{fmt(paidCard)}</span>
               </div>
             )}
             {paidCredit > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-black font-semibold">{t('lbl.credit')}</span>
+                <span className="text-black font-semibold uppercase">{t('lbl.credit')}</span>
                 <span className="font-bold text-black dark:text-slate-100">{fmt(paidCredit)}</span>
               </div>
             )}
             {change > 0 && (
               <div className="flex justify-between text-sm font-bold text-black dark:text-slate-100">
-                <span>{t('lbl.change')}</span>
+                <span className="uppercase">{t('lbl.change')}</span>
                 <span>{fmt(change)}</span>
               </div>
             )}
+            {(() => {
+              const saved = (sale.items || []).reduce((acc, item) => {
+                const orig = parseFloat(item.original_price || 0) || parseFloat(item.unit_price || 0);
+                const unit = parseFloat(item.unit_price || 0);
+                const qty  = parseFloat(item.qty || 0);
+                return orig > unit ? acc + (orig - unit) * qty : acc;
+              }, 0);
+              return saved > 0 ? (
+                <div className="flex flex-col items-center border-2 border-black rounded-lg px-3 py-2 text-center">
+                  <span className="text-black font-black text-base uppercase">{t('lbl.you_saved')}</span>
+                  <span className="text-black font-black text-xl">{fmt(saved)}</span>
+                </div>
+              ) : null;
+            })()}
           </div>
+
+          {/* Barcode */}
+          {sale?.invoice_no && (
+            <div className="flex flex-col items-center mt-4 mb-1">
+              <div className="w-3/4">
+                <svg ref={barcodeRef} className="w-full h-auto" />
+              </div>
+              <p className="text-[10px] text-black font-mono mt-1">{sale.invoice_no}</p>
+            </div>
+          )}
 
           <hr className="border-slate-200 my-5" />
 
@@ -607,7 +653,7 @@ export default function SaleShow() {
 function MetaRow({ label, value, mono }) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm leading-snug min-w-0">
-      <span className="text-black font-semibold pr-2 shrink-0">{label}</span>
+      <span className="text-black font-semibold pr-2 shrink-0 uppercase">{label}</span>
       <span
         className={`ml-auto text-right font-bold text-black dark:text-slate-100min-w-0 break-words ${mono ? 'font-mono' : ''}`}
         style={{ overflowWrap: 'anywhere' }}

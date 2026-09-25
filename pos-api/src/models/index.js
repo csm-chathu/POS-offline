@@ -14,8 +14,9 @@ function getModels(sequelize) {
   }, { tableName: 'roles', timestamps: false });
 
   const Category = sequelize.define('Category', {
-    id:   { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
-    name: { type: DataTypes.STRING(191), allowNull: false },
+    id:    { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
+    name:  { type: DataTypes.STRING(191), allowNull: false },
+    image: { type: DataTypes.STRING(512), allowNull: true },
   }, { tableName: 'categories' });
 
   const Product = sequelize.define('Product', {
