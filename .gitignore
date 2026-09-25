@@ -14,6 +14,9 @@ pos-client/release/
 Electron/dist/
 Electron/dist-offline/
 pos-api/public/
+pos-api/uploads/products/*
+!pos-api/uploads/products/.gitkeep
+!pos-api/uploads/products/.gitignore
 
 # Graphify cache
 graphify-out/cache/

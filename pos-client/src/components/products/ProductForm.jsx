@@ -114,7 +114,25 @@ export default function ProductForm({ initial = {}, onSubmit, isSaving }) {
     if (cameraInputRef.current) cameraInputRef.current.value = '';
   }
 
+  const isLocalMode = API.includes('localhost') || API.includes('127.0.0.1');
+
   async function uploadPendingFile() {
+    if (isLocalMode) {
+      // Offline mode — upload to local API, store on disk
+      const fd = new FormData();
+      fd.append('file', pendingFile);
+      const upRes  = await fetch(`${API}/api/images/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      const upData = await upRes.json();
+      if (!upRes.ok) throw new Error(upData.error || 'Upload failed');
+      // Return absolute URL so img src works from the app
+      return `${API}${upData.url}`;
+    }
+
+    // Online mode — upload to ImageKit CDN
     const authRes = await fetch(`${API}/api/imagekit/auth`, {
       headers: { Authorization: `Bearer ${token}` },
     });

@@ -41,6 +41,10 @@ app.use('/api/features',  require('./routes/features'));
 app.use('/api/roles',     require('./routes/roles'));
 app.use('/api/reports',   require('./routes/reports'));
 app.use('/api/imagekit',       require('./routes/imagekit'));
+app.use('/api/images',         require('./routes/localImages'));
+
+// Serve locally uploaded product images
+app.use('/uploads', require('express').static(require('path').join(__dirname, '../uploads')));
 app.use('/api/notifications',  require('./routes/notifications'));
 app.use('/api/tenants',        require('./routes/tenants'));
 app.use('/api/scale',          require('./routes/scale'));
