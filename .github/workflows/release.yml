@@ -49,16 +49,24 @@ jobs:
         working-directory: electron
         run: npm install
 
-      - name: Build & publish offline EXE
+      - name: Build offline EXE
         working-directory: electron
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          EP_DRAFT: false
-          EP_PRE_RELEASE: false
-        run: npx electron-builder --config electron-builder.offline.config.js --win nsis --publish always
+        run: npx electron-builder --config electron-builder.offline.config.js --win nsis --publish never
 
-      - name: Publish release (undraft if electron-builder left it as draft)
+      - name: Create GitHub Release and upload assets
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "${{ github.ref_name }}" --draft=false --latest --repo csm-chathu/POS-offline || true
+        run: |
+          TAG="${{ github.ref_name }}"
+          gh release create "$TAG" \
+            --repo csm-chathu/POS-offline \
+            --title "$TAG" \
+            --notes "Offline desktop build $TAG" \
+            --latest || true
+          gh release upload "$TAG" \
+            electron/dist-offline/*.exe \
+            electron/dist-offline/*.blockmap \
+            electron/dist-offline/offline.yml \
+            --repo csm-chathu/POS-offline \
+            --clobber
