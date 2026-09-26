@@ -553,6 +553,14 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
 
   devLog('log', `[print-receipt-html] content=${contentPx}px → page=${JSON.stringify(pageSize)}`);
 
+  // DEBUG: save PDF to desktop to inspect Chromium's rendering
+  try {
+    const pdfPath = require('path').join(require('os').homedir(), 'Desktop', 'receipt-debug.pdf');
+    const pdfData = await win.webContents.printToPDF({ pageSize, printBackground: true, margins: { marginType: 'printableArea' } });
+    require('fs').writeFileSync(pdfPath, pdfData);
+    devLog('log', `[print-receipt-html] PDF saved to ${pdfPath}`);
+  } catch (e) { devLog('error', `[print-receipt-html] PDF save failed: ${e.message}`); }
+
   return new Promise((resolve) => {
     let settled = false;
     function finish(success, reason) {
