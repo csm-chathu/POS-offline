@@ -345,7 +345,6 @@ function Receipt({ sale, settings, user, onClose }) {
     .footer { text-align:center; margin-top:10px; font-size:12px; font-weight:700; line-height:1.8; word-break:break-word; }
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
-      @page { margin: 0; size: 72mm auto; }
       body { padding: 3mm 2mm; width: 72mm !important; max-width: 72mm !important; }
     }
   </style>
