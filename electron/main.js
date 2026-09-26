@@ -532,7 +532,8 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
 
   const win = new BrowserWindow({
     show: false,
-    width: is80 ? 500 : 900,  // wider than content so 72mm CSS never overflows
+    skipTaskbar: true,
+    width: is80 ? 500 : 900,
     height: 1400,
     webPreferences: { javascript: true, sandbox: false },
   });
@@ -541,7 +542,10 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   await win.webContents.executeJavaScript(
     `document.open('text/html');document.write(${JSON.stringify(html)});document.close();`
   );
-  await new Promise(r => setTimeout(r, 800));
+  // Show window briefly so Chromium completes its rendering pipeline before printing
+  win.showInactive();
+  await new Promise(r => setTimeout(r, 1000));
+  win.hide();
 
   // Do NOT specify pageSize — let the printer use its own configured paper size,
   // exactly as the browser does. The @page CSS in the HTML controls the layout width.
