@@ -535,17 +535,16 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     webPreferences: { javascript: true, sandbox: false },
   });
 
-  await win.loadURL('about:blank');
-  await win.webContents.executeJavaScript(
-    `document.open('text/html');document.write(${JSON.stringify(html)});document.close();`
-  );
-  await new Promise(r => setTimeout(r, 800));
+  await win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+  await new Promise(resolve => win.webContents.once('did-finish-load', resolve));
+  win.webContents.setZoomFactor(1);
+  await new Promise(r => setTimeout(r, 600));
 
   const contentPx = await win.webContents.executeJavaScript(
     'Math.ceil(document.documentElement.scrollHeight)'
   ).catch(() => 1200);
 
-  const widthMicrons  = Math.round(PAPER_WIDTH_MM * 1000); // 79000
+  const widthMicrons  = Math.round(PAPER_WIDTH_MM * 1000); // 72000
   const heightMicrons = Math.ceil(contentPx * 25400 / 96) + 5000;
   const pageSize = is80
     ? { width: widthMicrons, height: Math.max(80000, heightMicrons) }
