@@ -529,9 +529,12 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   const PRINT_WIDTH_MM = 72;
   const PRINT_WIDTH_PX = Math.round(PRINT_WIDTH_MM / 25.4 * 96); // 272
 
+  // Render at a wider viewport so content lays out at its natural width,
+  // then we measure and scale down to fit the physical paper (auto-fit like a driver).
+  const RENDER_WIDTH_PX = 500;
   const win = new BrowserWindow({
     show: false,
-    width: is80 ? PRINT_WIDTH_PX : 820,
+    width: is80 ? RENDER_WIDTH_PX : 820,
     height: 1200,
     webPreferences: { javascript: true, sandbox: false },
   });
@@ -543,16 +546,25 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   // Give Chromium time to parse, layout, and apply inline CSS before measuring
   await new Promise(r => setTimeout(r, 800));
 
-  // Measure content height at PRINT_WIDTH_PX — height is exact for this width.
   let pageSize;
+  let scaleFactor = 100;
+
   if (is80) {
-    const contentPx = await win.webContents.executeJavaScript(
-      'Math.ceil(document.documentElement.scrollHeight)'
-    ).catch(() => 800);
+    // Measure the natural rendered width and height
+    const [contentW, contentH] = await win.webContents.executeJavaScript(
+      '[Math.ceil(document.documentElement.scrollWidth), Math.ceil(document.documentElement.scrollHeight)]'
+    ).catch(() => [RENDER_WIDTH_PX, 800]);
+
+    // Auto-scale: fit content width into 72mm physical page (like a print driver)
+    const contentMm = contentW * 25.4 / 96;
+    scaleFactor = Math.min(100, Math.round(PRINT_WIDTH_MM / contentMm * 100));
+
+    // Scale the height too so the page is tall enough for the scaled content
+    const scaledHeightPx = Math.ceil(contentH * scaleFactor / 100);
     const widthMicrons  = Math.round(PRINT_WIDTH_MM * 1000);
-    const heightMicrons = Math.ceil(contentPx * 25400 / 96) + 3000; // +3mm buffer
+    const heightMicrons = Math.ceil(scaledHeightPx * 25400 / 96) + 3000;
     pageSize = { width: widthMicrons, height: Math.max(50000, heightMicrons) };
-    devLog('log', `[print-receipt-html] content=${contentPx}px → page=${pageSize.width}×${pageSize.height}µm`);
+    devLog('log', `[print-receipt-html] content=${contentW}×${contentH}px (${contentMm.toFixed(1)}mm) → scale=${scaleFactor}% page=${pageSize.width}×${pageSize.height}µm`);
   } else {
     pageSize = 'A4';
   }
@@ -569,7 +581,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize, scaleFactor: is80 ? 95 : 100 },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize, scaleFactor },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });
