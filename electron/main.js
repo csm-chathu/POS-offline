@@ -544,20 +544,10 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   // Small delay for any synchronous layout (fonts, etc.)
   await new Promise(r => setTimeout(r, 400));
 
-  let pageSize;
+  // No custom pageSize — let the @page CSS in the receipt HTML control paper size.
+  // This is the same mechanism the browser uses, which already works correctly.
+  const pageSize = undefined;
   const scaleFactor = 100;
-
-  if (is80) {
-    const contentPx = await win.webContents.executeJavaScript(
-      'Math.ceil(document.documentElement.scrollHeight)'
-    ).catch(() => 800);
-    const widthMicrons  = Math.round(PAPER_WIDTH_MM * 1000); // 80mm full paper width
-    const heightMicrons = Math.ceil(contentPx * 25400 / 96) + 3000;
-    pageSize = { width: widthMicrons, height: Math.max(50000, heightMicrons) };
-    devLog('log', `[print-receipt-html] content=${contentPx}px → page=${pageSize.width}×${pageSize.height}µm`);
-  } else {
-    pageSize = 'A4';
-  }
 
   return new Promise((resolve) => {
     let settled = false;
@@ -572,7 +562,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize, scaleFactor },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, scaleFactor },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });

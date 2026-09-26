@@ -195,6 +195,7 @@ export default function SaleShow() {
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
       body { padding: ${is80 ? '3mm 2mm' : '10mm'}; width: ${is80 ? '72mm' : '210mm'} !important; max-width: ${is80 ? '72mm' : '210mm'} !important; }
+      @page { size: ${is80 ? '80mm auto' : 'A4'}; margin: 0; }
     }
   </style>
 </head>
