@@ -523,11 +523,12 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     return { success: false, error: `Printer not found: ${configuredName}` };
   }
 
-  // POS-8370 physical paper = 80mm but printable area ≈ 72mm (4mm HW margin each side).
-  // Render at 72mm width so content never hits the hardware margin edge.
-  // 72mm at 96 DPI = 72/25.4*96 ≈ 272px.
-  const PRINT_WIDTH_MM = 72;
-  const PRINT_WIDTH_PX = Math.round(PRINT_WIDTH_MM / 25.4 * 96); // 272
+  // Physical paper roll = 80mm. Send 80mm as pageSize so the printer driver
+  // does NOT scale up (sending 72mm causes the driver to stretch to 80mm = clipping).
+  // Content CSS uses 72mm max-width to stay within the printable area (72mm = 80mm - 4mm margins each side).
+  const PAPER_WIDTH_MM  = 80;
+  const PRINT_WIDTH_MM  = 72; // content/printable width
+  const PRINT_WIDTH_PX  = Math.round(PRINT_WIDTH_MM / 25.4 * 96); // 272px
 
   const win = new BrowserWindow({
     show: false,
@@ -552,7 +553,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     const contentPx = await win.webContents.executeJavaScript(
       'Math.ceil(document.documentElement.scrollHeight)'
     ).catch(() => 800);
-    const widthMicrons  = Math.round(PRINT_WIDTH_MM * 1000);
+    const widthMicrons  = Math.round(PAPER_WIDTH_MM * 1000); // 80mm full paper width
     const heightMicrons = Math.ceil(contentPx * 25400 / 96) + 3000;
     pageSize = { width: widthMicrons, height: Math.max(50000, heightMicrons) };
     devLog('log', `[print-receipt-html] content=${contentPx}px → page=${pageSize.width}×${pageSize.height}µm`);

@@ -159,8 +159,8 @@ export default function SaleShow() {
       font-family: ${isSinhala ? "'Noto Sans Sinhala', sans-serif" : "'Courier New', Courier, monospace"};
       font-size: ${is80 ? '11px' : '13px'};
       font-weight: 400;
-      width: ${is80 ? '100%' : '210mm'};
-      max-width: ${is80 ? '100%' : '210mm'};
+      width: ${is80 ? '72mm' : '210mm'};
+      max-width: ${is80 ? '72mm' : '210mm'};
       color: #000;
       word-break: break-word;
       overflow-wrap: break-word;
@@ -194,7 +194,7 @@ export default function SaleShow() {
     .footer { text-align:center; margin-top:8px; font-size:${is80 ? '10px' : '12px'}; color:#000; font-weight:400; line-height:1.8; word-break:break-word; }
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
-      body { padding: ${is80 ? '3mm 2mm' : '10mm'}; width: ${is80 ? '100%' : '210mm'} !important; max-width: ${is80 ? '100%' : '210mm'} !important; }
+      body { padding: ${is80 ? '3mm 2mm' : '10mm'}; width: ${is80 ? '72mm' : '210mm'} !important; max-width: ${is80 ? '72mm' : '210mm'} !important; }
     }
   </style>
 </head>
