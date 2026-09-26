@@ -537,12 +537,10 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     webPreferences: { javascript: true, sandbox: false },
   });
 
-  // Write HTML to a temp file and load it — more reliable than document.write() into about:blank
-  const tmpPath = require('path').join(app.getPath('temp'), `pos_receipt_${Date.now()}.html`);
-  require('fs').writeFileSync(tmpPath, html, 'utf-8');
-  await win.loadFile(tmpPath);
-  // Small delay for any synchronous layout (fonts, etc.)
-  await new Promise(r => setTimeout(r, 400));
+  // Use a data: URL — embeds HTML directly so the print renderer can access it
+  // without requiring file-system permissions (file:// is blocked in print sub-process).
+  await win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+  await new Promise(r => setTimeout(r, 600));
 
   // No custom pageSize — let the @page CSS in the receipt HTML control paper size.
   // This is the same mechanism the browser uses, which already works correctly.
@@ -555,7 +553,6 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
       if (settled) return;
       settled = true;
       if (!win.isDestroyed()) win.destroy();
-      try { require('fs').unlinkSync(tmpPath); } catch {}
       devLog(success ? 'log' : 'error',
         `[print-receipt-html] ${success ? 'sent to "' + (deviceName || 'default') + '"' : 'failed: ' + reason}`);
       resolve({ success, error: success ? null : reason });
