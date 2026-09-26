@@ -192,7 +192,8 @@ export default function SaleShow() {
     .footer { text-align:center; margin-top:8px; font-size:${is80 ? '10px' : '12px'}; color:#000; font-weight:400; line-height:1.8; word-break:break-word; }
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
-      body { padding: ${is80 ? '3mm 4mm' : '10mm'}; width: 100% !important; max-width: 100% !important; }
+      @page { margin: 0; size: ${is80 ? '72mm auto' : 'A4'}; }
+      body { padding: ${is80 ? '3mm 4mm' : '10mm'}; width: ${is80 ? '72mm' : '210mm'} !important; max-width: ${is80 ? '72mm' : '210mm'} !important; }
     }
   </style>
 </head>

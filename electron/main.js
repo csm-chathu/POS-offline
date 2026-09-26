@@ -528,10 +528,12 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   const PAPER_WIDTH_MM = 72;
   const PAPER_WIDTH_PX = Math.round(PAPER_WIDTH_MM / 25.4 * 96); // 272px
 
+  const pageSize = is80 ? { width: 72000, height: 297000 } : 'A4';
+
   const win = new BrowserWindow({
     show: false,
-    width: PAPER_WIDTH_PX,
-    height: 1400,
+    width: is80 ? 340 : 820,
+    height: 700,
     webPreferences: { javascript: true, sandbox: false },
   });
 
@@ -539,27 +541,9 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   await win.webContents.executeJavaScript(
     `document.open('text/html');document.write(${JSON.stringify(html)});document.close();`
   );
-  await new Promise(r => setTimeout(r, 1000));
+  await new Promise(r => setTimeout(r, 800));
 
-  const contentPx = await win.webContents.executeJavaScript(
-    'Math.ceil(document.documentElement.scrollHeight)'
-  ).catch(() => 1200);
-
-  const widthMicrons  = Math.round(PAPER_WIDTH_MM * 1000); // 72000
-  const heightMicrons = Math.ceil(contentPx * 25400 / 96) + 5000;
-  const pageSize = is80
-    ? { width: widthMicrons, height: Math.max(80000, heightMicrons) }
-    : 'A4';
-
-  devLog('log', `[print-receipt-html] content=${contentPx}px → page=${JSON.stringify(pageSize)}`);
-
-  // DEBUG: save PDF to desktop to inspect Chromium's rendering
-  try {
-    const pdfPath = require('path').join(require('os').homedir(), 'Desktop', 'receipt-debug.pdf');
-    const pdfData = await win.webContents.printToPDF({ pageSize, printBackground: true, margins: { marginType: 'printableArea' } });
-    require('fs').writeFileSync(pdfPath, pdfData);
-    devLog('log', `[print-receipt-html] PDF saved to ${pdfPath}`);
-  } catch (e) { devLog('error', `[print-receipt-html] PDF save failed: ${e.message}`); }
+  devLog('log', `[print-receipt-html] page=${JSON.stringify(pageSize)}`);
 
   return new Promise((resolve) => {
     let settled = false;
@@ -573,7 +557,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'printableArea' }, pageSize, scaleFactor: 100 },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize, scaleFactor: is80 ? 95 : 100 },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });
