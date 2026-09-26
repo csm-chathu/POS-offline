@@ -532,10 +532,8 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
 
   const win = new BrowserWindow({
     show: false,
-    frame: false,          // no title bar / border — content area = window size
-    useContentSize: true,  // width/height refer to viewport, not outer window
-    width: is80 ? PRINT_WIDTH_PX : 820,
-    height: 1200,
+    width: is80 ? 500 : 900,  // wider than content so 72mm CSS never overflows
+    height: 1400,
     webPreferences: { javascript: true, sandbox: false },
   });
 
