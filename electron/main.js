@@ -535,10 +535,12 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     webPreferences: { javascript: true, sandbox: false },
   });
 
-  await win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
-  await new Promise(resolve => win.webContents.once('did-finish-load', resolve));
+  await win.loadURL('about:blank');
+  await win.webContents.executeJavaScript(
+    `document.open('text/html');document.write(${JSON.stringify(html)});document.close();`
+  );
   win.webContents.setZoomFactor(1);
-  await new Promise(r => setTimeout(r, 600));
+  await new Promise(r => setTimeout(r, 1000));
 
   const contentPx = await win.webContents.executeJavaScript(
     'Math.ceil(document.documentElement.scrollHeight)'
