@@ -530,7 +530,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
 
   const win = new BrowserWindow({
     show: false,
-    width: PAPER_WIDTH_PX + 30,
+    width: 500,
     height: 1400,
     webPreferences: { javascript: true, sandbox: false },
   });

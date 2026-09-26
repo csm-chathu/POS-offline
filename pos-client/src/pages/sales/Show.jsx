@@ -192,7 +192,6 @@ export default function SaleShow() {
     .paid-row { display:flex; justify-content:space-between; gap:6px; padding:2px 0; font-weight:400; font-size:${is80 ? '10px' : '12px'}; color:#000; text-transform:uppercase; }
     .change-row { display:flex; justify-content:space-between; gap:6px; font-weight:600; color:#000; padding:2px 0; font-size:${is80 ? '11px' : '13px'}; text-transform:uppercase; }
     .footer { text-align:center; margin-top:8px; font-size:${is80 ? '10px' : '12px'}; color:#000; font-weight:400; line-height:1.8; word-break:break-word; }
-    @page { size: ${is80 ? '79mm auto' : 'A4'}; margin: 0; }
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
       body { padding: ${is80 ? '3mm 2mm' : '10mm'}; width: ${is80 ? '75mm' : '210mm'} !important; max-width: ${is80 ? '75mm' : '210mm'} !important; }
