@@ -525,8 +525,8 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
 
   // 72mm pageSize confirmed to produce output (80mm causes blank pages).
   // Body CSS is set to 58mm so content stays well within the printer's printable area.
-  const PAPER_WIDTH_MM = 79;
-  const PAPER_WIDTH_PX = Math.round(PAPER_WIDTH_MM / 25.4 * 96); // 299px
+  const PAPER_WIDTH_MM = 72;
+  const PAPER_WIDTH_PX = Math.round(PAPER_WIDTH_MM / 25.4 * 96); // 272px
 
   const win = new BrowserWindow({
     show: true,
@@ -569,7 +569,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize, scaleFactor: is80 ? 99 : 100 },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize, scaleFactor: is80 ? 90 : 100 },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });
