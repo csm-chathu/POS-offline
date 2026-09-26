@@ -157,7 +157,7 @@ export default function SaleShow() {
     svg { max-width: 100%; height: auto; }
     html, body {
       font-family: ${isSinhala ? "'Noto Sans Sinhala', sans-serif" : "'Courier New', Courier, monospace"};
-      font-size: ${is80 ? '11px' : '13px'};
+      font-size: ${is80 ? '13px' : '13px'};
       font-weight: 400;
       color: #000;
       word-break: break-word;
@@ -166,18 +166,18 @@ export default function SaleShow() {
     body { padding: ${is80 ? '5mm 4mm' : '15mm 20mm'}; }
     .center { text-align:center; }
     .logo { width:${is80 ? '56px' : '72px'}; height:${is80 ? '56px' : '72px'}; object-fit:contain; margin:0 auto 6px; display:block; border-radius:50%; }
-    .shop-name { font-size:${is80 ? '14px' : '18px'}; font-weight:700; text-align:center; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; color:#000; word-break:break-word; }
-    .shop-meta { font-size:${is80 ? '10px' : '12px'}; font-weight:400; text-align:center; color:#000; line-height:1.6; word-break:break-word; }
+    .shop-name { font-size:${is80 ? '16px' : '18px'}; font-weight:700; text-align:center; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; color:#000; word-break:break-word; }
+    .shop-meta { font-size:${is80 ? '12px' : '12px'}; font-weight:400; text-align:center; color:#000; line-height:1.6; word-break:break-word; }
     .divider { border:none; border-top:1px solid #000; margin:6px 0; }
-    .row { display:flex; justify-content:space-between; gap:6px; padding:2px 0; font-size:${is80 ? '10px' : '12px'}; color:#000; }
+    .row { display:flex; justify-content:space-between; gap:6px; padding:2px 0; font-size:${is80 ? '12px' : '12px'}; color:#000; }
     .row .label { color:#000; font-weight:600; flex-shrink:0; text-transform:uppercase; }
     .row .value { font-weight:500; color:#000; text-align:right; min-width:0; word-break:break-word; }
-    .col-header { display:grid; grid-template-columns: 1fr 1fr 1fr 24px 1fr; gap:0; font-weight:800; padding:0; background:#fff; color:#000; margin:6px 0; font-size:${is80 ? '9px' : '11px'}; text-align:center; text-transform:uppercase; align-items:center; }
+    .col-header { display:grid; grid-template-columns: 1fr 1fr 1fr 24px 1fr; gap:0; font-weight:800; padding:0; background:#fff; color:#000; margin:6px 0; font-size:${is80 ? '11px' : '11px'}; text-align:center; text-transform:uppercase; align-items:center; }
     .col-header span { white-space:normal; line-height:1.2; padding:4px 3px; display:flex; align-items:center; justify-content:center; }
     .col-header span:last-child { border-right:none; }
-    .item-row { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; font-weight:500; padding-top:4px; font-size:${is80 ? '11px' : '13px'}; color:#000; }
+    .item-row { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; font-weight:500; padding-top:4px; font-size:${is80 ? '13px' : '13px'}; color:#000; }
     .item-name { flex:1; min-width:0; word-break:break-word; overflow-wrap:break-word; font-weight:600; }
-    .item-data { display:grid; grid-template-columns: 1fr 1fr 1fr 24px 1fr; gap:1px; text-align:center; padding:2px 0 4px; font-size:${is80 ? '9px' : '11px'}; font-weight:400; color:#000; word-break:break-all; }
+    .item-data { display:grid; grid-template-columns: 1fr 1fr 1fr 24px 1fr; gap:1px; text-align:center; padding:2px 0 4px; font-size:${is80 ? '11px' : '11px'}; font-weight:400; color:#000; word-break:break-all; }
     .qty-col { text-align:center; }
     .orig-col, .our-col, .disc-col { text-align:center; }
     .line-col { text-align:right; font-weight:600; }
@@ -185,11 +185,11 @@ export default function SaleShow() {
     .disc-box { border:1px solid #000; border-radius:4px; padding:2px 8px; display:flex; justify-content:space-between; gap:6px; margin:4px 0; }
     .disc-label { color:#000; font-weight:600; flex-shrink:0; text-transform:uppercase; }
     .disc-val { color:#000; font-weight:600; }
-    .total-row { display:flex; justify-content:space-between; align-items:baseline; gap:6px; font-weight:700; font-size:${is80 ? '13px' : '16px'}; padding:5px 0 3px; border-top:1px solid #000; margin-top:4px; color:#000; text-transform:uppercase; }
+    .total-row { display:flex; justify-content:space-between; align-items:baseline; gap:6px; font-weight:700; font-size:${is80 ? '15px' : '16px'}; padding:5px 0 3px; border-top:1px solid #000; margin-top:4px; color:#000; text-transform:uppercase; }
     .total-val { color:#000; flex-shrink:0; }
-    .paid-row { display:flex; justify-content:space-between; gap:6px; padding:2px 0; font-weight:400; font-size:${is80 ? '10px' : '12px'}; color:#000; text-transform:uppercase; }
-    .change-row { display:flex; justify-content:space-between; gap:6px; font-weight:600; color:#000; padding:2px 0; font-size:${is80 ? '11px' : '13px'}; text-transform:uppercase; }
-    .footer { text-align:center; margin-top:8px; font-size:${is80 ? '10px' : '12px'}; color:#000; font-weight:400; line-height:1.8; word-break:break-word; }
+    .paid-row { display:flex; justify-content:space-between; gap:6px; padding:2px 0; font-weight:400; font-size:${is80 ? '12px' : '12px'}; color:#000; text-transform:uppercase; }
+    .change-row { display:flex; justify-content:space-between; gap:6px; font-weight:600; color:#000; padding:2px 0; font-size:${is80 ? '13px' : '13px'}; text-transform:uppercase; }
+    .footer { text-align:center; margin-top:8px; font-size:${is80 ? '12px' : '12px'}; color:#000; font-weight:400; line-height:1.8; word-break:break-word; }
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
       @page { margin: 0; size: ${is80 ? '72mm auto' : 'A4'}; }
@@ -220,7 +220,7 @@ export default function SaleShow() {
     <div style="display:inline-block;width:75%;overflow:hidden">
       <svg style="width:100%;height:auto;display:block" viewBox="${barcodeSvg.match(/viewBox="([^"]+)"/)?.[1] || '0 0 200 50'}" preserveAspectRatio="xMidYMid meet">${barcodeSvg.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '')}</svg>
     </div>
-    <div style="font-size:10px;margin-top:2px;font-family:monospace">${sale.invoice_no}</div>
+    <div style="font-size:12px;margin-top:2px;font-family:monospace">${sale.invoice_no}</div>
   </div>
   <hr class="divider">
   <div class="footer">
