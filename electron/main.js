@@ -523,26 +523,25 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     return { success: false, error: `Printer not found: ${configuredName}` };
   }
 
-  // Place window far off-screen so it's technically "shown" (Chromium renders fully)
-  // but invisible to the user. show:false windows don't composite frames → blank print.
-  const { screen } = require('electron');
-  const pw = screen.getPrimaryDisplay().size.width;
+  // Create a transparent window (opacity 0) so DWM composites it (full render pipeline)
+  // but the user never sees it. show:false or off-screen windows are not composited
+  // by Windows DWM → Chromium skips frame commits → print job is blank.
   const win = new BrowserWindow({
     show: true,
     skipTaskbar: true,
-    x: pw + 200,   // beyond right edge of primary display
-    y: 0,
+    x: 0, y: 0,
     width: is80 ? 500 : 900,
     height: 1400,
     webPreferences: { javascript: true, sandbox: false },
   });
+  win.setOpacity(0);   // invisible to user but DWM still composites it
 
   await win.loadURL('about:blank');
   await win.webContents.executeJavaScript(
     `document.open('text/html');document.write(${JSON.stringify(html)});document.close();`
   );
-  // Wait for layout and paint to settle before printing
-  await new Promise(r => setTimeout(r, 1000));
+  // Wait for layout, paint and frame commit before printing
+  await new Promise(r => setTimeout(r, 1200));
 
   return new Promise((resolve) => {
     let settled = false;
