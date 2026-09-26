@@ -123,17 +123,17 @@ export default function SaleShow() {
       const originalLineTotal = qty * unit;
       const reducedLineTotal = Math.max(0, originalLineTotal - lineDiscount);
       const ourUnit = qty > 0 ? Math.max(0, reducedLineTotal / qty) : unit;
-      if (origPrice > unit) totalSaved += (origPrice - unit) * qty;
+      if (origPrice > ourUnit) totalSaved += (origPrice - ourUnit) * qty;
+      const origStrike = (origPrice > ourUnit && is80)
+        ? `<span class="orig-strike">${fmt(origPrice)}</span> `
+        : '';
       return `
       <div class="item-row">
         <div class="item-name">${idx + 1}) ${item.product_name}</div>
-      </div>
-      <div class="item-data">
-        <span class="orig-col orig-light">${fmt(origPrice)}</span>
-        <span class="our-col">${fmt(ourUnit)}</span>
-        <span class="disc-col">${lineDiscount > 0 ? fmt(lineDiscount) : '-'}</span>
-        <span class="qty-col">${qty}</span>
-        <span class="line-col">${fmt(reducedLineTotal)}</span>
+        <div class="item-detail">
+          <span>${origStrike}${fmt(ourUnit)} &times; ${qty}</span>
+          <span class="line-col">${fmt(reducedLineTotal)}</span>
+        </div>
       </div>
     `;
     }).join('');
@@ -174,16 +174,11 @@ export default function SaleShow() {
     .row { display:flex; justify-content:space-between; gap:6px; padding:2px 0; font-size:${is80 ? '10px' : '12px'}; color:#000; }
     .row .label { color:#000; font-weight:600; flex-shrink:0; text-transform:uppercase; }
     .row .value { font-weight:500; color:#000; text-align:right; min-width:0; word-break:break-word; }
-    .col-header { display:grid; grid-template-columns: 1fr 1fr 1fr 28px 1fr; gap:0; font-weight:800; padding:0; background:#fff; color:#000; margin:6px 0; font-size:${is80 ? '10px' : '12px'}; text-align:center; text-transform:uppercase; align-items:center; }
-    .col-header span { white-space:normal; line-height:1.2; padding:4px 3px; display:flex; align-items:center; justify-content:center; }
-    .col-header span:last-child { border-right:none; }
-    .item-row { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; font-weight:500; padding-top:4px; font-size:${is80 ? '11px' : '13px'}; color:#000; }
-    .item-name { flex:1; min-width:0; word-break:break-word; overflow-wrap:break-word; font-weight:600; }
-    .item-data { display:grid; grid-template-columns: 1fr 1fr 1fr 28px 1fr; gap:4px; text-align:center; padding:2px 0 4px; font-size:${is80 ? '10px' : '12px'}; font-weight:400; color:#000; }
-    .qty-col { text-align:center; }
-    .orig-col, .our-col, .disc-col { text-align:center; white-space:nowrap; }
-    .line-col { text-align:right; white-space:nowrap; font-weight:600; }
-    .orig-light { font-weight: 400; }
+    .item-row { padding:3px 0 4px; font-size:${is80 ? '11px' : '13px'}; color:#000; border-bottom:1px dashed #ccc; }
+    .item-name { font-weight:600; word-break:break-word; overflow-wrap:break-word; }
+    .item-detail { display:flex; justify-content:space-between; align-items:baseline; gap:4px; font-size:${is80 ? '10px' : '12px'}; font-weight:400; margin-top:2px; }
+    .line-col { font-weight:700; white-space:nowrap; }
+    .orig-strike { text-decoration:line-through; color:#888; font-size:${is80 ? '9px' : '11px'}; }
     .disc-box { border:1px solid #000; border-radius:4px; padding:2px 8px; display:flex; justify-content:space-between; gap:6px; margin:4px 0; }
     .disc-label { color:#000; font-weight:600; flex-shrink:0; text-transform:uppercase; }
     .disc-val { color:#000; font-weight:600; }
@@ -194,7 +189,6 @@ export default function SaleShow() {
     .footer { text-align:center; margin-top:8px; font-size:${is80 ? '10px' : '12px'}; color:#000; font-weight:400; line-height:1.8; word-break:break-word; }
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
-      @page { margin: 0; size: ${is80 ? '72mm auto' : 'A4'}; }
       body { padding: ${is80 ? '3mm 4mm' : '10mm'}; width: ${is80 ? '72mm' : '210mm'} !important; }
     }
   </style>
@@ -207,7 +201,7 @@ export default function SaleShow() {
   <div class="row"><span class="label">${rl('th.date')}</span><span class="value">${fmtDate(sale.created_at)} ${fmtTime(sale.created_at)}</span></div>
   <div class="row"><span class="label">${rl('lbl.cashier')}</span><span class="value">${sale.user?.name || '—'}</span></div>
   ${sale.customer?.name ? `<div class="row"><span class="label">${rl('lbl.customer')}</span><span class="value">${sale.customer.name}</span></div>` : ''}
-  <div class="col-header"><span>${rl('lbl.original_price')}</span><span>${rl('lbl.our_price')}</span><span>${rl('lbl.discount')}</span><span class="qty-col">${rl('th.qty')}</span><span>${rl('th.total')}</span></div>
+  <hr class="divider">
   ${itemsHtml}
   ${parseFloat(sale.discount) > 0 ? `<div class="disc-box"><span class="disc-label">${rl('lbl.earned_profit')}</span><span class="disc-val">- ${fmt(sale.discount)}</span></div>` : ''}
   ${parseFloat(sale.tax) > 0 ? `<div class="row"><span class="label">${rl('lbl.tax')}</span><span>${fmt(sale.tax)}</span></div>` : ''}
