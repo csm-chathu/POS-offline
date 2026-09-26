@@ -18,8 +18,11 @@ pos-api/uploads/products/*
 !pos-api/uploads/products/.gitkeep
 !pos-api/uploads/products/.gitignore
 
-# Graphify cache
-graphify-out/cache/
+# Graphify (all generated output)
+graphify-out/
+
+# Claude Code local settings
+.claude/settings.json
 
 # Logs
 *.log
