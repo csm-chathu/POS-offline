@@ -530,7 +530,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
 
   const win = new BrowserWindow({
     show: false,
-    width: 500,
+    width: PAPER_WIDTH_PX,
     height: 1400,
     webPreferences: { javascript: true, sandbox: false },
   });
@@ -565,7 +565,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize, scaleFactor: 100 },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'printableArea' }, pageSize, scaleFactor: 100 },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });
