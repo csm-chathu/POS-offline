@@ -318,12 +318,12 @@ function Receipt({ sale, settings, user, onClose }) {
       font-size: 13px;
       font-weight: 700;
       width: 100%;
-      max-width: 80mm;
+      max-width: 72mm;
       color: #000;
       word-break: break-word;
       overflow-wrap: break-word;
     }
-    body { padding: 5mm 3mm; }
+    body { padding: 5mm 2mm; }
     .logo { width:56px; height:56px; object-fit:contain; margin:0 auto 6px; display:block; border-radius:50%; }
     .shop-name { font-size:16px; font-weight:700; text-align:center; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; word-break:break-word; }
     .shop-meta { font-size:12px; font-weight:700; text-align:center; line-height:1.6; word-break:break-word; }
@@ -345,8 +345,8 @@ function Receipt({ sale, settings, user, onClose }) {
     .footer { text-align:center; margin-top:10px; font-size:12px; font-weight:700; line-height:1.8; word-break:break-word; }
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
-      @page { margin: 0; size: 80mm auto; }
-      body { padding: 3mm 3mm; width: 100% !important; max-width: 80mm !important; }
+      @page { margin: 0; size: 72mm auto; }
+      body { padding: 3mm 2mm; width: 72mm !important; max-width: 72mm !important; }
     }
   </style>
 </head>
