@@ -537,12 +537,12 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     webPreferences: { javascript: true, sandbox: false },
   });
 
-  await win.loadURL('about:blank');
-  await win.webContents.executeJavaScript(
-    `document.open('text/html');document.write(${JSON.stringify(html)});document.close();`
-  );
-  // Give Chromium time to parse, layout, and apply inline CSS before measuring
-  await new Promise(r => setTimeout(r, 800));
+  // Write HTML to a temp file and load it — more reliable than document.write() into about:blank
+  const tmpPath = require('path').join(app.getPath('temp'), `pos_receipt_${Date.now()}.html`);
+  require('fs').writeFileSync(tmpPath, html, 'utf-8');
+  await win.loadFile(tmpPath);
+  // Small delay for any synchronous layout (fonts, etc.)
+  await new Promise(r => setTimeout(r, 400));
 
   let pageSize;
   const scaleFactor = 100;
@@ -565,6 +565,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
       if (settled) return;
       settled = true;
       if (!win.isDestroyed()) win.destroy();
+      try { require('fs').unlinkSync(tmpPath); } catch {}
       devLog(success ? 'log' : 'error',
         `[print-receipt-html] ${success ? 'sent to "' + (deviceName || 'default') + '"' : 'failed: ' + reason}`);
       resolve({ success, error: success ? null : reason });
