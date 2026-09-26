@@ -523,27 +523,35 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     return { success: false, error: `Printer not found: ${configuredName}` };
   }
 
-  // Create a transparent window (opacity 0) so DWM composites it (full render pipeline)
-  // but the user never sees it. show:false or off-screen windows are not composited
-  // by Windows DWM → Chromium skips frame commits → print job is blank.
+  // 72mm pageSize is the ONLY value confirmed to produce output on this printer.
+  // 80mm causes blank pages (driver rejects the page format).
+  const PAPER_WIDTH_MM = 72;
+  const PAPER_WIDTH_PX = Math.round(PAPER_WIDTH_MM / 25.4 * 96); // 272px
+
   const win = new BrowserWindow({
-    show: true,
-    skipTaskbar: true,
-    x: 0, y: 0,
-    width: is80 ? 500 : 900,
+    show: false,
+    width: 500,
     height: 1400,
     webPreferences: { javascript: true, sandbox: false },
   });
-  win.setOpacity(0);   // invisible to user but DWM still composites it
 
-  // data: URL keeps PrintRenderFrame attached to the correct document.
-  // document.write() into about:blank leaves PrintRenderFrame on the empty document → blank print.
-  await new Promise((resolve) => {
-    win.webContents.once('did-finish-load', resolve);
-    win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
-  });
-  // Extra settle time for fonts / layout after load
-  await new Promise(r => setTimeout(r, 600));
+  await win.loadURL('about:blank');
+  await win.webContents.executeJavaScript(
+    `document.open('text/html');document.write(${JSON.stringify(html)});document.close();`
+  );
+  await new Promise(r => setTimeout(r, 800));
+
+  const contentPx = await win.webContents.executeJavaScript(
+    'Math.ceil(document.documentElement.scrollHeight)'
+  ).catch(() => 1200);
+
+  const widthMicrons  = Math.round(PAPER_WIDTH_MM * 1000);
+  const heightMicrons = Math.ceil(contentPx * 25400 / 96) + 5000;
+  const pageSize = is80
+    ? { width: widthMicrons, height: Math.max(80000, heightMicrons) }
+    : 'A4';
+
+  devLog('log', `[print-receipt-html] content=${contentPx}px → page=${JSON.stringify(pageSize)}`);
 
   return new Promise((resolve) => {
     let settled = false;
@@ -556,9 +564,8 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
       resolve({ success, error: success ? null : reason });
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
-    // No custom pageSize — @page CSS controls paper size (same as browser print path)
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' } },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });

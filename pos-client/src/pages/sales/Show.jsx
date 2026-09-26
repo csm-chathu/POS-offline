@@ -165,7 +165,7 @@ export default function SaleShow() {
       word-break: break-word;
       overflow-wrap: break-word;
     }
-    body { padding: ${is80 ? '5mm 2mm' : '15mm 20mm'}; }
+    body { padding: ${is80 ? '5mm 1mm' : '15mm 20mm'}; }
     .center { text-align:center; }
     .logo { width:${is80 ? '56px' : '72px'}; height:${is80 ? '56px' : '72px'}; object-fit:contain; margin:0 auto 6px; display:block; border-radius:50%; }
     .shop-name { font-size:${is80 ? '14px' : '18px'}; font-weight:700; text-align:center; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; color:#000; word-break:break-word; }
@@ -194,8 +194,7 @@ export default function SaleShow() {
     .footer { text-align:center; margin-top:8px; font-size:${is80 ? '10px' : '12px'}; color:#000; font-weight:400; line-height:1.8; word-break:break-word; }
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
-      body { padding: ${is80 ? '3mm 2mm' : '10mm'}; width: ${is80 ? '72mm' : '210mm'} !important; max-width: ${is80 ? '72mm' : '210mm'} !important; }
-      @page { size: ${is80 ? '80mm auto' : 'A4'}; margin: 0; }
+      body { padding: ${is80 ? '3mm 1mm' : '10mm'}; width: ${is80 ? '72mm' : '210mm'} !important; max-width: ${is80 ? '72mm' : '210mm'} !important; }
     }
   </style>
 </head>
