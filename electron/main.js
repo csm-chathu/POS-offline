@@ -559,7 +559,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, scaleFactor },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'default' }, scaleFactor },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });
