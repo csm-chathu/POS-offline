@@ -543,22 +543,9 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   );
   await new Promise(r => setTimeout(r, 800));
 
-  let pageSize;
+  // Do NOT specify pageSize — let the printer use its own configured paper size,
+  // exactly as the browser does. The @page CSS in the HTML controls the layout width.
   const scaleFactor = 100;
-
-  if (is80) {
-    const contentPx = await win.webContents.executeJavaScript(
-      'Math.ceil(document.documentElement.scrollHeight)'
-    ).catch(() => 1200);
-    // Use PAPER_WIDTH_MM (80mm) not printable width — sending 72mm causes printer to
-    // scale up to 80mm (111%) which clips the content. 80mm → printer prints 1:1.
-    const widthMicrons  = Math.round(PAPER_WIDTH_MM * 1000);
-    const heightMicrons = Math.ceil(contentPx * 25400 / 96) + 5000;
-    pageSize = { width: widthMicrons, height: Math.max(80000, heightMicrons) };
-    devLog('log', `[print-receipt-html] content=${contentPx}px → page=${pageSize.width}×${pageSize.height}µm`);
-  } else {
-    pageSize = 'A4';
-  }
 
   return new Promise((resolve) => {
     let settled = false;
@@ -572,7 +559,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize, scaleFactor },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, scaleFactor },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });
