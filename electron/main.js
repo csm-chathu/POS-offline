@@ -537,15 +537,28 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     webPreferences: { javascript: true, sandbox: false },
   });
 
-  // Use a data: URL — embeds HTML directly so the print renderer can access it
-  // without requiring file-system permissions (file:// is blocked in print sub-process).
-  await win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
-  await new Promise(r => setTimeout(r, 600));
+  await win.loadURL('about:blank');
+  await win.webContents.executeJavaScript(
+    `document.open('text/html');document.write(${JSON.stringify(html)});document.close();`
+  );
+  await new Promise(r => setTimeout(r, 800));
 
-  // No custom pageSize — let the @page CSS in the receipt HTML control paper size.
-  // This is the same mechanism the browser uses, which already works correctly.
-  const pageSize = undefined;
+  let pageSize;
   const scaleFactor = 100;
+
+  if (is80) {
+    const contentPx = await win.webContents.executeJavaScript(
+      'Math.ceil(document.documentElement.scrollHeight)'
+    ).catch(() => 1200);
+    // Use PAPER_WIDTH_MM (80mm) not printable width — sending 72mm causes printer to
+    // scale up to 80mm (111%) which clips the content. 80mm → printer prints 1:1.
+    const widthMicrons  = Math.round(PAPER_WIDTH_MM * 1000);
+    const heightMicrons = Math.ceil(contentPx * 25400 / 96) + 5000;
+    pageSize = { width: widthMicrons, height: Math.max(80000, heightMicrons) };
+    devLog('log', `[print-receipt-html] content=${contentPx}px → page=${pageSize.width}×${pageSize.height}µm`);
+  } else {
+    pageSize = 'A4';
+  }
 
   return new Promise((resolve) => {
     let settled = false;
@@ -559,7 +572,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, scaleFactor },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize, scaleFactor },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });
