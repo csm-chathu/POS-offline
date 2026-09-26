@@ -529,13 +529,9 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   const PAPER_WIDTH_PX = Math.round(PAPER_WIDTH_MM / 25.4 * 96); // 272px
 
   const win = new BrowserWindow({
-    show: true,
-    x: -10000,
-    y: -10000,
+    show: false,
     width: 500,
     height: 1400,
-    frame: false,
-    skipTaskbar: true,
     webPreferences: { javascript: true, sandbox: false },
   });
 
