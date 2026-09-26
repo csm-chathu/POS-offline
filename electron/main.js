@@ -536,12 +536,14 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   });
   win.setOpacity(0);   // invisible to user but DWM still composites it
 
-  await win.loadURL('about:blank');
-  await win.webContents.executeJavaScript(
-    `document.open('text/html');document.write(${JSON.stringify(html)});document.close();`
-  );
-  // Wait for layout, paint and frame commit before printing
-  await new Promise(r => setTimeout(r, 1200));
+  // data: URL keeps PrintRenderFrame attached to the correct document.
+  // document.write() into about:blank leaves PrintRenderFrame on the empty document → blank print.
+  await new Promise((resolve) => {
+    win.webContents.once('did-finish-load', resolve);
+    win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+  });
+  // Extra settle time for fonts / layout after load
+  await new Promise(r => setTimeout(r, 600));
 
   return new Promise((resolve) => {
     let settled = false;
