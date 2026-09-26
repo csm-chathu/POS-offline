@@ -523,16 +523,15 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     return { success: false, error: `Printer not found: ${configuredName}` };
   }
 
-  // Physical paper roll = 80mm. Send 80mm as pageSize so the printer driver
-  // does NOT scale up (sending 72mm causes the driver to stretch to 80mm = clipping).
-  // Content CSS uses 72mm max-width to stay within the printable area (72mm = 80mm - 4mm margins each side).
-  const PAPER_WIDTH_MM  = 80;
-  const PRINT_WIDTH_MM  = 72; // content/printable width
-  const PRINT_WIDTH_PX  = Math.round(PRINT_WIDTH_MM / 25.4 * 96); // 272px
-
+  // Place window far off-screen so it's technically "shown" (Chromium renders fully)
+  // but invisible to the user. show:false windows don't composite frames → blank print.
+  const { screen } = require('electron');
+  const pw = screen.getPrimaryDisplay().size.width;
   const win = new BrowserWindow({
-    show: false,
+    show: true,
     skipTaskbar: true,
+    x: pw + 200,   // beyond right edge of primary display
+    y: 0,
     width: is80 ? 500 : 900,
     height: 1400,
     webPreferences: { javascript: true, sandbox: false },
@@ -542,14 +541,8 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
   await win.webContents.executeJavaScript(
     `document.open('text/html');document.write(${JSON.stringify(html)});document.close();`
   );
-  // Show window briefly so Chromium completes its rendering pipeline before printing
-  win.showInactive();
+  // Wait for layout and paint to settle before printing
   await new Promise(r => setTimeout(r, 1000));
-  win.hide();
-
-  // Do NOT specify pageSize — let the printer use its own configured paper size,
-  // exactly as the browser does. The @page CSS in the HTML controls the layout width.
-  const scaleFactor = 100;
 
   return new Promise((resolve) => {
     let settled = false;
@@ -562,8 +555,9 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
       resolve({ success, error: success ? null : reason });
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
+    // No custom pageSize — @page CSS controls paper size (same as browser print path)
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'default' }, scaleFactor },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' } },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });
