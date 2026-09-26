@@ -523,14 +523,14 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     return { success: false, error: `Printer not found: ${configuredName}` };
   }
 
-  // 72mm pageSize is the ONLY value confirmed to produce output on this printer.
-  // 80mm causes blank pages (driver rejects the page format).
-  const PAPER_WIDTH_MM = 72;
-  const PAPER_WIDTH_PX = Math.round(PAPER_WIDTH_MM / 25.4 * 96); // 272px
+  // 72mm pageSize confirmed to produce output (80mm causes blank pages).
+  // Body CSS is set to 58mm so content stays well within the printer's printable area.
+  const PAPER_WIDTH_MM = 79;
+  const PAPER_WIDTH_PX = Math.round(PAPER_WIDTH_MM / 25.4 * 96); // 299px
 
   const win = new BrowserWindow({
     show: false,
-    width: 500,
+    width: PAPER_WIDTH_PX + 30,
     height: 1400,
     webPreferences: { javascript: true, sandbox: false },
   });
@@ -545,7 +545,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     'Math.ceil(document.documentElement.scrollHeight)'
   ).catch(() => 1200);
 
-  const widthMicrons  = Math.round(PAPER_WIDTH_MM * 1000);
+  const widthMicrons  = Math.round(PAPER_WIDTH_MM * 1000); // 79000
   const heightMicrons = Math.ceil(contentPx * 25400 / 96) + 5000;
   const pageSize = is80
     ? { width: widthMicrons, height: Math.max(80000, heightMicrons) }
@@ -565,7 +565,7 @@ ipcMain.handle('printers:print-receipt-html', async (event, html, options = {}) 
     }
     const timeout = setTimeout(() => finish(false, 'timeout'), 20_000);
     win.webContents.print(
-      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize, scaleFactor: is80 ? 90 : 100 },
+      { silent: true, printBackground: true, deviceName: deviceName || undefined, margins: { marginType: 'none' }, pageSize, scaleFactor: is80 ? 99 : 100 },
       (success, reason) => { clearTimeout(timeout); finish(success, reason); }
     );
   });

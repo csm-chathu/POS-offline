@@ -159,13 +159,13 @@ export default function SaleShow() {
       font-family: ${isSinhala ? "'Noto Sans Sinhala', sans-serif" : "'Courier New', Courier, monospace"};
       font-size: ${is80 ? '11px' : '13px'};
       font-weight: 400;
-      width: ${is80 ? '72mm' : '210mm'};
-      max-width: ${is80 ? '72mm' : '210mm'};
+      width: ${is80 ? '75mm' : '210mm'};
+      max-width: ${is80 ? '75mm' : '210mm'};
       color: #000;
       word-break: break-word;
       overflow-wrap: break-word;
     }
-    body { padding: ${is80 ? '5mm 1mm' : '15mm 20mm'}; }
+    body { padding: ${is80 ? '5mm 2mm' : '15mm 20mm'}; }
     .center { text-align:center; }
     .logo { width:${is80 ? '56px' : '72px'}; height:${is80 ? '56px' : '72px'}; object-fit:contain; margin:0 auto 6px; display:block; border-radius:50%; }
     .shop-name { font-size:${is80 ? '14px' : '18px'}; font-weight:700; text-align:center; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; color:#000; word-break:break-word; }
@@ -174,15 +174,15 @@ export default function SaleShow() {
     .row { display:flex; justify-content:space-between; gap:6px; padding:2px 0; font-size:${is80 ? '10px' : '12px'}; color:#000; }
     .row .label { color:#000; font-weight:600; flex-shrink:0; text-transform:uppercase; }
     .row .value { font-weight:500; color:#000; text-align:right; min-width:0; word-break:break-word; }
-    .col-header { display:grid; grid-template-columns: 1fr 1fr 1fr 28px 1fr; gap:0; font-weight:800; padding:0; background:#fff; color:#000; margin:6px 0; font-size:${is80 ? '10px' : '12px'}; text-align:center; text-transform:uppercase; align-items:center; }
+    .col-header { display:grid; grid-template-columns: 1fr 1fr 1fr 24px 1fr; gap:0; font-weight:800; padding:0; background:#fff; color:#000; margin:6px 0; font-size:${is80 ? '9px' : '11px'}; text-align:center; text-transform:uppercase; align-items:center; }
     .col-header span { white-space:normal; line-height:1.2; padding:4px 3px; display:flex; align-items:center; justify-content:center; }
     .col-header span:last-child { border-right:none; }
     .item-row { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; font-weight:500; padding-top:4px; font-size:${is80 ? '11px' : '13px'}; color:#000; }
     .item-name { flex:1; min-width:0; word-break:break-word; overflow-wrap:break-word; font-weight:600; }
-    .item-data { display:grid; grid-template-columns: 1fr 1fr 1fr 28px 1fr; gap:2px; text-align:center; padding:2px 0 4px; font-size:${is80 ? '10px' : '12px'}; font-weight:400; color:#000; }
+    .item-data { display:grid; grid-template-columns: 1fr 1fr 1fr 24px 1fr; gap:1px; text-align:center; padding:2px 0 4px; font-size:${is80 ? '9px' : '11px'}; font-weight:400; color:#000; word-break:break-all; }
     .qty-col { text-align:center; }
-    .orig-col, .our-col, .disc-col { text-align:center; white-space:nowrap; }
-    .line-col { text-align:right; white-space:nowrap; font-weight:600; }
+    .orig-col, .our-col, .disc-col { text-align:center; }
+    .line-col { text-align:right; font-weight:600; }
     .orig-light { font-weight: 400; }
     .disc-box { border:1px solid #000; border-radius:4px; padding:2px 8px; display:flex; justify-content:space-between; gap:6px; margin:4px 0; }
     .disc-label { color:#000; font-weight:600; flex-shrink:0; text-transform:uppercase; }
@@ -192,9 +192,10 @@ export default function SaleShow() {
     .paid-row { display:flex; justify-content:space-between; gap:6px; padding:2px 0; font-weight:400; font-size:${is80 ? '10px' : '12px'}; color:#000; text-transform:uppercase; }
     .change-row { display:flex; justify-content:space-between; gap:6px; font-weight:600; color:#000; padding:2px 0; font-size:${is80 ? '11px' : '13px'}; text-transform:uppercase; }
     .footer { text-align:center; margin-top:8px; font-size:${is80 ? '10px' : '12px'}; color:#000; font-weight:400; line-height:1.8; word-break:break-word; }
+    @page { size: ${is80 ? '79mm auto' : 'A4'}; margin: 0; }
     @media print {
       html, body { overflow: visible !important; height: auto !important; }
-      body { padding: ${is80 ? '3mm 1mm' : '10mm'}; width: ${is80 ? '72mm' : '210mm'} !important; max-width: ${is80 ? '72mm' : '210mm'} !important; }
+      body { padding: ${is80 ? '3mm 2mm' : '10mm'}; width: ${is80 ? '75mm' : '210mm'} !important; max-width: ${is80 ? '75mm' : '210mm'} !important; }
     }
   </style>
 </head>
