@@ -111,12 +111,13 @@ async function main() {
     { key: 'settings',      label: 'Settings',     path: '/settings',           group: 'mgmt', sort_order: 14 },
     { key: 'data_import',   label: 'Data Import',  path: '/admin/data-import',  group: 'mgmt', sort_order: 15 },
     { key: 'role_permissions', label: 'Role Permissions', path: '/settings/roles', group: 'mgmt', sort_order: 16 },
+    { key: 'extensions',      label: 'Extensions',       path: '/extensions',      group: 'mgmt', sort_order: 17 },
   ];
 
   const ROLE_DEFAULTS = {
     manager: ['dashboard','new_sale','sales','products','stock_intake','purchases','customers','credit','suppliers','categories','reports'],
     cashier:  ['dashboard','new_sale','sales','customers','credit'],
-    custom:   ['dashboard','new_sale','sales'],
+    custom:   ['dashboard','new_sale','sales','products','stock_intake','customers','credit'],
   };
 
   if (seed) {

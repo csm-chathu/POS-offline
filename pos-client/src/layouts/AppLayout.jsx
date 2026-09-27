@@ -263,7 +263,7 @@ export default function AppLayout() {
     .map(featureToNav);
 
   const mgmtNav = allFeatures
-    .filter(f => f.group === 'mgmt' && (f.key === 'extensions' || canSee(f.key)) && (!ADMIN_ONLY.has(f.key) || role === 'admin'))
+    .filter(f => f.group === 'mgmt' && canSee(f.key) && (!ADMIN_ONLY.has(f.key) || role === 'admin'))
     .map(featureToNav);
 
   function toggleCollapse() {
