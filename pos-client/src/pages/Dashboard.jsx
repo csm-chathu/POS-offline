@@ -5,7 +5,6 @@ import { api } from '../app/baseApi';
 import { useLocale } from '../contexts/LocaleContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { selectRole } from '../features/auth/authSlice';
-import ManagerDashboard from './ManagerDashboard';
 
 const dashboardApi = api.injectEndpoints({
   endpoints: build => ({
@@ -360,7 +359,6 @@ function FastMoving({ items, isDark }) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const role = useSelector(selectRole);
-  if (role === 'manager') return <ManagerDashboard />;
 
   const { data, isLoading } = dashboardApi.useGetDashboardQuery();
   const navigate = useNavigate();

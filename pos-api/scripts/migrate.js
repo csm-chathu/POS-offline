@@ -37,7 +37,7 @@ if (!tenant) {
 const log  = m => console.log(`\x1b[32m✔\x1b[0m  ${m}`);
 const warn = m => console.log(`\x1b[33m⚠\x1b[0m  ${m}`);
 
-const DEFAULT_ROLES = ['admin', 'manager', 'cashier', 'custom'];
+const DEFAULT_ROLES = ['admin', 'shop_owner', 'cashier'];
 const DEFAULT_SETTINGS = [
   { key: 'shop_name',        value: '' },
   { key: 'address',          value: '' },
@@ -54,9 +54,9 @@ async function main() {
   if (fresh) console.log('\x1b[33m⚠\x1b[0m  --fresh will DROP all tables. Ctrl+C to abort.\n');
 
   const DEFAULT_USERS = [
-    { name: 'Admin',   email: 'admin@lumac.lk',   password: '123', role: 'admin' },
-    { name: 'Manager', email: 'manager@lumac.lk', password: '123', role: 'manager' },
-    { name: 'Cashier', email: 'cashier@lumac.lk', password: '123', role: 'cashier' },
+    { name: 'Admin',      email: 'admin@lumac.lk',      password: '123', role: 'admin' },
+    { name: 'Shop Owner', email: 'shopowner@lumac.lk',  password: '123', role: 'shop_owner' },
+    { name: 'Cashier',    email: 'cashier@lumac.lk',    password: '123', role: 'cashier' },
   ];
 
   const seq = new Sequelize(tenant.database, tenant.username, tenant.password, {
@@ -115,9 +115,8 @@ async function main() {
   ];
 
   const ROLE_DEFAULTS = {
-    manager: ['dashboard','new_sale','sales','products','stock_intake','purchases','customers','credit','suppliers','categories','reports'],
-    cashier:  ['dashboard','new_sale','sales','customers','credit'],
-    custom:   ['dashboard','new_sale','sales','products','stock_intake','customers','credit'],
+    shop_owner: ['dashboard','new_sale','sales','invoices','products','stock_intake','purchases','customers','credit','suppliers','categories','reports','users','settings','data_import','role_permissions'],
+    cashier:    ['dashboard','new_sale','sales','customers','credit'],
   };
 
   if (seed) {

@@ -77,7 +77,7 @@ const PAGE_TITLE_KEYS = {
   '/reports':          'page.reports',
 };
 
-const roleColor = { admin: 'bg-red-500', manager: 'bg-orange-500', cashier: 'bg-green-500' };
+const roleColor = { admin: 'bg-red-500', shop_owner: 'bg-orange-500', cashier: 'bg-green-500' };
 
 export default function AppLayout() {
   const dispatch  = useDispatch();
@@ -89,7 +89,7 @@ export default function AppLayout() {
   const features       = useSelector(selectFeatures);    // null = admin (all access)
   const storedFeatures = useSelector(selectAllFeatures);
   const isAdmin        = role === 'admin';
-  const isManager      = isAdmin || role === 'manager' || role === 'setup';
+  const isManager      = isAdmin || role === 'shop_owner' || role === 'setup';
   const canSee         = key => isAdmin || features === null || features.includes(key);
 
   // Fallback: fetch features from API if store is empty (e.g. old cached session)

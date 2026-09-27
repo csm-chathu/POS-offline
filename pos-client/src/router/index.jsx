@@ -6,12 +6,7 @@ import AppLayout      from '../layouts/AppLayout';
 import CashierLayout  from '../layouts/CashierLayout';
 import GuestLayout    from '../layouts/GuestLayout';
 import Login       from '../pages/Login';
-import Dashboard        from '../pages/Dashboard';
-import ManagerDashboard from '../pages/ManagerDashboard';
-
-function DashboardRoute() {
-  return localStorage.getItem('use_manager_dashboard') === 'true' ? <ManagerDashboard /> : <Dashboard />;
-}
+import Dashboard from '../pages/Dashboard';
 import ProductsIndex  from '../pages/products/Index';
 import ProductCreate  from '../pages/products/Create';
 import ProductEdit    from '../pages/products/Edit';
@@ -112,7 +107,7 @@ export const router = createAppRouter([
       element: <RoleLayout />,
       children: [
         { index: true,                  element: <Navigate to="/dashboard" replace /> },
-        { path: 'dashboard',            element: <DashboardRoute /> },
+        { path: 'dashboard',            element: <Dashboard /> },
         { path: 'sales',                element: <SalesIndex /> },
         { path: 'sales/create',         element: <POSRoute /> },
         { path: 'sales/:id',            element: <SalesShow /> },

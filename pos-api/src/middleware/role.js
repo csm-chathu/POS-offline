@@ -1,6 +1,6 @@
 // role('admin') or role('admin', 'manager')
-// 'custom' and 'setup' are treated as equivalent to 'manager' for all route checks
-const ROLE_ALIASES = { custom: 'manager', setup: 'manager' };
+// 'shop_owner', 'custom', and 'setup' are treated as equivalent to 'manager' for all route checks
+const ROLE_ALIASES = { shop_owner: 'manager', custom: 'manager', setup: 'manager' };
 
 module.exports = function role(...allowed) {
   return (req, res, next) => {

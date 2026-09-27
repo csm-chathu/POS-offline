@@ -317,7 +317,7 @@ export default function SaleShow() {
           </div>
 
           {/* Return button */}
-          {sale.status === 'completed' && (role === 'admin' || role === 'manager') && (
+          {sale.status === 'completed' && (role === 'admin' || role === 'shop_owner') && (
             <button onClick={openReturn}
               className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-red-300 text-red-600 text-xs font-semibold hover:bg-red-50 transition-colors">
               {IcoReturn}
