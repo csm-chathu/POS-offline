@@ -148,11 +148,13 @@ async function main() {
       created ? log(`Created: ${f.key}`) : log(`Updated: ${f.key}`);
     }
     // Assign default features to manager and cashier (admin bypasses feature check)
+    // shop_owner always force-synced; others only set if empty
+    const FORCE_SYNC_ROLES = new Set(['shop_owner']);
     for (const [roleName, keys] of Object.entries(ROLE_DEFAULTS)) {
       const r = roleMap[roleName];
       if (!r) continue;
       const current = await r.getFeatures();
-      if (current.length === 0) {
+      if (current.length === 0 || FORCE_SYNC_ROLES.has(roleName)) {
         await r.setFeatures(keys.map(k => featMap[k]).filter(Boolean));
         log(`Assigned default features to: ${roleName}`);
       } else {
