@@ -38,19 +38,19 @@ function isoDate(d) { return d.toISOString().slice(0, 10); }
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({ label, value, sub, icon, iconBg, valueColor = 'text-blue-600', isDark }) {
   return (
-    <div className="h-full bg-white rounded-2xl p-5 border shadow-sm flex items-start gap-4"
+    <div className="h-full bg-white rounded-2xl p-3 sm:p-5 border shadow-sm flex items-start gap-2 sm:gap-4"
       style={isDark ? { backgroundColor: '#141414', borderColor: '#2a2a2a', boxShadow: '0 4px 24px rgba(0,0,0,0.5)' } : {}}>
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
-        {icon}
+      <div className={`w-8 h-8 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+        <span className="scale-75 sm:scale-100 flex">{icon}</span>
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{label}</p>
-        <p className={`text-3xl font-extrabold mt-0.5 leading-tight truncate ${valueColor}`}>
+        <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold leading-tight">{label}</p>
+        <p className={`text-xl sm:text-3xl font-extrabold mt-0.5 leading-tight truncate ${valueColor}`}>
           {typeof value === 'string' && value.startsWith('Rs. ')
-            ? <><span className="text-sm font-semibold">Rs. </span>{value.slice(4)}</>
+            ? <><span className="text-[10px] sm:text-sm font-semibold">Rs. </span>{value.slice(4)}</>
             : value}
         </p>
-        {sub && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{sub}</p>}
+        {sub && <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">{sub}</p>}
       </div>
     </div>
   );
@@ -93,7 +93,7 @@ function HourlyChart({ hourlySales, dates, isDark }) {
   const gridStroke = isDark ? '#2a2a2a' : '#f1f5f9';
 
   return (
-    <div className="h-full bg-white rounded-2xl border shadow-sm p-5 flex flex-col"
+    <div className="h-full bg-white rounded-2xl border shadow-sm p-3 sm:p-5 flex flex-col"
       style={isDark ? { backgroundColor: '#141414', borderColor: '#2a2a2a', boxShadow: '0 4px 24px rgba(0,0,0,0.5)' } : {}}>
       <div className="flex items-start justify-between mb-3">
         <div>
@@ -175,12 +175,12 @@ function HourlyChart({ hourlySales, dates, isDark }) {
 function QuickBtn({ label, icon, color, onClick }) {
   return (
     <button onClick={onClick}
-      className={`group relative flex flex-col items-center justify-center gap-3 py-5 px-4 rounded-2xl text-white shadow-md hover:shadow-xl hover:-translate-y-1 active:translate-y-0 transition-all duration-200 overflow-hidden ${color}`}>
+      className={`group relative flex flex-col items-center justify-center gap-1.5 sm:gap-3 py-3 sm:py-5 px-2 sm:px-4 rounded-2xl text-white shadow-md hover:shadow-xl hover:-translate-y-1 active:translate-y-0 transition-all duration-200 overflow-hidden ${color}`}>
       <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-black/15 group-hover:bg-black/20 transition-colors" />
-      <div className="w-16 h-16 rounded-2xl bg-black/20 group-hover:bg-black/25 flex items-center justify-center transition-colors z-10">
-        {icon}
+      <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-2xl bg-black/20 group-hover:bg-black/25 flex items-center justify-center transition-colors z-10">
+        <span className="scale-75 sm:scale-100 flex">{icon}</span>
       </div>
-      <span className="font-bold text-base tracking-tight leading-tight z-10">{label}</span>
+      <span className="font-bold text-xs sm:text-base tracking-tight leading-tight z-10 text-center">{label}</span>
     </button>
   );
 }
