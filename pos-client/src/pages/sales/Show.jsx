@@ -165,14 +165,14 @@ export default function SaleShow() {
     }
     body { padding: ${is80 ? '5mm 4mm' : '15mm 20mm'}; }
     .center { text-align:center; }
-    .logo { width:${is80 ? '56px' : '72px'}; height:${is80 ? '56px' : '72px'}; object-fit:contain; margin:0 auto 6px; display:block; border-radius:50%; }
+    .logo { width:${is80 ? '68px' : '88px'}; height:${is80 ? '68px' : '88px'}; object-fit:contain; margin:0 auto 6px; display:block; border-radius:50%; }
     .shop-name { font-size:${is80 ? '16px' : '18px'}; font-weight:700; text-align:center; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; color:#000; word-break:break-word; }
     .shop-meta { font-size:${is80 ? '12px' : '12px'}; font-weight:400; text-align:center; color:#000; line-height:1.6; word-break:break-word; }
     .divider { border:none; border-top:1px solid #000; margin:6px 0; }
     .row { display:flex; justify-content:space-between; gap:6px; padding:2px 0; font-size:${is80 ? '12px' : '12px'}; color:#000; }
     .row .label { color:#000; font-weight:600; flex-shrink:0; text-transform:uppercase; }
     .row .value { font-weight:500; color:#000; text-align:right; min-width:0; word-break:break-word; }
-    .col-header { display:grid; grid-template-columns: 1fr 1fr 1fr 24px 1fr; gap:0; font-weight:800; padding:0; background:#fff; color:#000; margin:6px 0; font-size:${is80 ? '11px' : '11px'}; text-align:center; text-transform:uppercase; align-items:center; }
+    .col-header { display:grid; grid-template-columns: 1fr 1fr 1fr 24px 1fr; gap:0; font-weight:800; padding:0; background:#fff; color:#000; margin:6px 0; font-size:${is80 ? '11px' : '11px'}; text-align:center; text-transform:uppercase; align-items:center; border-top:1px solid #000; border-bottom:1px solid #000; }
     .col-header span { white-space:normal; line-height:1.2; padding:4px 3px; display:flex; align-items:center; justify-content:center; }
     .col-header span:last-child { border-right:none; }
     .item-row { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; font-weight:500; padding-top:4px; font-size:${is80 ? '13px' : '13px'}; color:#000; }
@@ -426,9 +426,9 @@ export default function SaleShow() {
           <div className="text-center mb-5">
             {shopInfo.shop_logo ? (
               <img src={shopInfo.shop_logo} alt="logo"
-                className="w-24 h-24 object-contain mx-auto mb-3 rounded-full" />
+                className="w-32 h-32 object-contain mx-auto mb-3 rounded-full" />
             ) : (
-              <div className="w-24 h-24 bg-slate-100 rounded-full mx-auto mb-3 flex items-center justify-center text-slate-400 text-4xl font-black">
+              <div className="w-32 h-32 bg-slate-100 rounded-full mx-auto mb-3 flex items-center justify-center text-slate-400 text-4xl font-black">
                 {(shopInfo.shop_name || 'L')[0]}
               </div>
             )}
@@ -453,7 +453,7 @@ export default function SaleShow() {
 
           {/* Items */}
           <div className="mb-3 min-w-0">
-            <div className="grid grid-cols-[1fr_1fr_1fr_40px_1fr] text-xs font-extrabold text-black bg-white mb-3 text-center min-w-0 uppercase items-stretch">
+            <div className="grid grid-cols-[1fr_1fr_1fr_40px_1fr] text-xs font-extrabold text-black bg-white mb-3 text-center min-w-0 uppercase items-stretch border-t border-b border-black">
               <span className="flex items-center justify-center leading-tight whitespace-pre-line px-1 py-2">{rl('lbl.original_price').replace(' ', '\n')}</span>
               <span className="flex items-center justify-center leading-tight whitespace-pre-line px-1 py-2">{rl('lbl.our_price').replace(' ', '\n')}</span>
               <span className="flex items-center justify-center leading-tight px-1 py-2">{t('lbl.discount')}</span>
