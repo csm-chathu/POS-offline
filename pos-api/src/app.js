@@ -124,6 +124,8 @@ async function runMigrations(sequelize) {
     { name: '002_remove_duplicate_pos_feature', sql: `DELETE FROM features WHERE \`key\` = 'pos'` },
     { name: '003_categories_add_image', sql: `ALTER TABLE categories ADD COLUMN image VARCHAR(512) NULL` },
     { name: '004_categories_add_show_in_pos', sql: `ALTER TABLE categories ADD COLUMN show_in_pos TINYINT(1) NOT NULL DEFAULT 0` },
+    { name: '005_seed_stock_intake_feature', sql: `INSERT OR IGNORE INTO features (key, label, path, \`group\`, sort_order, icon, offline_ok, created_at, updated_at) VALUES ('stock_intake', 'Stock Intake', '/products/intake', 'main', 5, 'products', 1, datetime('now'), datetime('now'))` },
+    { name: '006_assign_stock_intake_to_shop_owner', sql: `INSERT OR IGNORE INTO role_features (role_id, feature_id) SELECT r.id, f.id FROM roles r, features f WHERE r.name = 'shop_owner' AND f.key = 'stock_intake'` },
   ];
 
   for (const m of migrations) {
@@ -237,8 +239,9 @@ async function startServer() {
         { key: 'dashboard',  label: 'Dashboard',       path: '/dashboard',      group: 'main', sort_order: 1,  icon: 'dashboard',  offline_ok: true },
         { key: 'new_sale',   label: 'New Sale (POS)',  path: '/sales/create',   group: 'main', sort_order: 2,  icon: 'pos',        offline_ok: true },
         { key: 'sales',      label: 'Sales',           path: '/sales',          group: 'main', sort_order: 3,  icon: 'sales',      offline_ok: true },
-        { key: 'products',   label: 'Products',     path: '/products',       group: 'main', sort_order: 4,  icon: 'products',   offline_ok: true },
-        { key: 'customers',  label: 'Customers',    path: '/customers',      group: 'main', sort_order: 5,  icon: 'customers',  offline_ok: true },
+        { key: 'products',      label: 'Products',     path: '/products',          group: 'main', sort_order: 4,  icon: 'products',   offline_ok: true },
+        { key: 'stock_intake',  label: 'Stock Intake', path: '/products/intake',   group: 'main', sort_order: 5,  icon: 'products',   offline_ok: true },
+        { key: 'customers',     label: 'Customers',    path: '/customers',          group: 'main', sort_order: 6,  icon: 'customers',  offline_ok: true },
         { key: 'credit',     label: 'Credit Book',  path: '/credit',         group: 'main', sort_order: 6,  icon: 'credit',     offline_ok: true },
         { key: 'purchases',  label: 'Purchases',    path: '/purchases',      group: 'main', sort_order: 7,  icon: 'purchases',  offline_ok: true },
         { key: 'suppliers',  label: 'Suppliers',    path: '/suppliers',      group: 'main', sort_order: 8,  icon: 'suppliers',  offline_ok: true },
